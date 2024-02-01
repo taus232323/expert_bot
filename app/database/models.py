@@ -30,7 +30,7 @@ class Contacts(Base):
     working_hours = mapped_column(String)
     holydays = mapped_column(String)
     office_address = mapped_column(String)
-    website_links = relationship("WebsiteLink", back_populates="contact")
+    website_links = relationship("WebsiteLinks", back_populates="contacts")
 
 class WebsiteLinks(Base):
     __tablename__ = "website_links"
@@ -40,7 +40,7 @@ class WebsiteLinks(Base):
     url = mapped_column(String)
     contact_id = mapped_column(ForeignKey("contacts.id"))
 
-    contact = relationship("Contact", back_populates="website_links")
+    contact = relationship("Contacts", back_populates="website_links")
 
 class Cases(Base):
     __tablename__ = "cases"

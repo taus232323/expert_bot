@@ -56,12 +56,12 @@ async def update_services(service_id, new_name, new_description) -> None:
         await session.execute(stmt)
         await session.commit()
 
-async def update_briefing(briefing_id, new_name, new_questions, new_answers) -> None:
+async def update_briefing(briefing_id, new_instruction, new_questions, new_answers) -> None:
     async with async_session() as session:
         stmt = (
             update(Briefing)
             .where(Briefing.id == briefing_id)
-            .values(name=new_name, questions=new_questions, answers=new_answers)
+            .values(instruction=new_instruction, questions=new_questions, answers=new_answers)
         )
         await session.execute(stmt)
         await session.commit()
