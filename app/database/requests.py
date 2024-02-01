@@ -32,5 +32,7 @@ async def get_briefing() -> list[Briefing]:
         result = await session.scalars(select(Briefing))
         return result
 
-
-
+async def get_user(user_id) -> User:
+    async with async_session() as session:
+        result = await session.scalar(select(User).where(User.id == user_id))
+        return result

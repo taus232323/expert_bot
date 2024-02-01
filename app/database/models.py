@@ -19,22 +19,7 @@ class User(Base):
     username = mapped_column(String)
     first_name = mapped_column(String)
     last_name = mapped_column(String)
-
-class Events(Base):
-    __tablename__ = "events"
-
-    id = mapped_column(BigInteger, primary_key=True)
-    name = mapped_column(String)
-    description = mapped_column(String)
-    date = mapped_column(DateTime)
-
-class Cases(Base):
-    __tablename__ = "cases"
-
-    id = mapped_column(BigInteger, primary_key=True)
-    title = mapped_column(String)
-    description = mapped_column(String)
-
+    
 class Contacts(Base):
     __tablename__ = "contacts"
 
@@ -42,7 +27,6 @@ class Contacts(Base):
     contact_type = mapped_column(String)
     phone = mapped_column(String)
     email = mapped_column(String)
-    address = mapped_column(String)
     working_hours = mapped_column(String)
     holydays = mapped_column(String)
     office_address = mapped_column(String)
@@ -52,10 +36,26 @@ class WebsiteLinks(Base):
     __tablename__ = "website_links"
 
     id = mapped_column(BigInteger, primary_key=True)
+    name = mapped_column(String)
     url = mapped_column(String)
     contact_id = mapped_column(ForeignKey("contacts.id"))
 
     contact = relationship("Contact", back_populates="website_links")
+
+class Cases(Base):
+    __tablename__ = "cases"
+
+    id = mapped_column(BigInteger, primary_key=True)
+    title = mapped_column(String)
+    description = mapped_column(String)
+    
+class Events(Base):
+    __tablename__ = "events"
+
+    id = mapped_column(BigInteger, primary_key=True)
+    name = mapped_column(String)
+    description = mapped_column(String)
+    date = mapped_column(DateTime)
 
 class Services(Base):
     __tablename__ = "services"
@@ -68,7 +68,7 @@ class Briefing(Base):
     __tablename__ = "briefing"
 
     id = mapped_column(BigInteger, primary_key=True)
-    name = mapped_column(String)
+    instructions = mapped_column(String)
     question = mapped_column(String)
     answer = mapped_column(String)
   
