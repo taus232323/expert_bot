@@ -1,4 +1,4 @@
 *cache__
 *.venv
 config*
-*db.sqlite3
+*.sqlite3
