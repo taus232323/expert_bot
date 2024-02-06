@@ -1,5 +1,5 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton
-from app.database.requests import get_links, get_contacts, get_briefing, get_services, get_cases, get_events
+from app.database.requests import get_contacts, get_briefing, get_services, get_cases, get_events
 from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
 
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton, InlineKeyboardMarkup
@@ -26,10 +26,15 @@ admin_main = ReplyKeyboardMarkup(
     one_time_keyboard=True
 )
 
-admin_keyboard = ReplyKeyboardMarkup(keyboard=[
-    [KeyboardButton(text='Добавить')],
-    [KeyboardButton(text='Изменить')],
-],    resize_keyboard=True, input_field_placeholder='Выберите действие', one_time_keyboard=True)
+admin_keyboard = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [
+            InlineKeyboardButton(text='Добавить', callback_data='add'),
+            InlineKeyboardButton(text='Изменить', callback_data='edit'),
+            InlineKeyboardButton(text='Удалить', callback_data='delete')
+        ]
+    ]
+)
 
 async def get_events_keyboard():
     events_kb = InlineKeyboardMarkup(row_width=2)

@@ -1,30 +1,19 @@
-from app.database.models import async_session, User, Contacts, Events, Cases, Briefing, Services, WebsiteLinks
+from app.database.models import async_session, User, Contacts, Events, Cases, Briefing, Services
 from sqlalchemy import update
 
-async def update_contacts(contact_id, new_phone, new_email, new_working_hours, new_office_address) -> None:
+async def update_contacts(contact_id, new_contact_type, new_value) -> None:
     async with async_session() as session:
         stmt = (
             update(Contacts)
             .where(Contacts.id == contact_id)
             .values(
-                phone=new_phone,
-                email=new_email,
-                working_hours=new_working_hours,
-                office_address=new_office_address
+                contact_type=new_contact_type,
+                value=new_value,
             )
         )
         await session.execute(stmt)
         await session.commit()
 
-async def update_links(link_id, new_name, new_url) -> None:
-    async with async_session() as session:
-        stmt = (
-            update(WebsiteLinks)
-            .where(WebsiteLinks.id == link_id)
-            .values(name=new_name, url=new_url)
-        )
-        await session.execute(stmt)
-        await session.commit()
 
 async def update_cases(case_id, new_title, new_description) -> None:
     async with async_session() as session:

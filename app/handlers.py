@@ -4,13 +4,15 @@ from aiogram.filters import CommandStart
 
 from settings import ADMIN_USER_IDS
 import app.keyboards as kb
-from app.database.requests import get_contacts
+from app.database.requests import get_contacts, set_user
 
 
 router = Router()
 
 @router.message(CommandStart())
 async def cmd_start(message: Message):
+    if isinstance(message, Message):
+        await set_user(message.from_user.id)
     if message.from_user.id in ADMIN_USER_IDS:
         await message.answer(f"Добро пожаловать, администратор {message.from_user.first_name}!"
                              "Выберите вариант из меню ниже", reply_markup = kb.admin_main)
@@ -20,17 +22,15 @@ async def cmd_start(message: Message):
     
 @router.message(F.text == "Контакты")
 async def contact_selected(message: Message):
-    contacts = await get_contacts()
-    print(len(contacts))
+    contacts = await get_contacts()   
+    if contacts:
+        contact_info = "\n".join([f"{contact.contact_type}: {contact.value}" for contact in contacts])
+        await message.answer(f"Моя контактная информация и график работы:\n{contact_info}")
+    else:
+        await message.answer("Контактная информация отсутствует.")
     if message.from_user.id in ADMIN_USER_IDS:
         await message.answer(f"{message.from_user.first_name}, для добавления/изменения "
                                       "контактной информации следуйте инструкциям", reply_markup=kb.admin_keyboard)
-    else:    
-        if contacts:
-            contact_info = "\n".join([f"{contact.contact_type}: {contact.phone}, {contact.email}, {contact.address}, {contact.working_hours}, {contact.office_address}" for contact in contacts])
-            await message.answer(f"Моя контактная информация и график работы:\n{contact_info}")
-        else:
-            await message.answer("Контактная информация отсутствует.")
     
 @router.callback_query(F.data.startswith("events_"))
 async def event_selected(callback: CallbackQuery):

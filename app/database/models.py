@@ -1,5 +1,5 @@
 from sqlalchemy import BigInteger, ForeignKey, DateTime, String
-from sqlalchemy.orm import relationship, mapped_column, DeclarativeBase
+from sqlalchemy.orm import relationship, mapped_column, DeclarativeBase, Mapped
 from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
 from settings import SQLALCHEMY_URL
 
@@ -14,63 +14,47 @@ class Base(AsyncAttrs, DeclarativeBase):
 class User(Base):
     __tablename__ = "users"
 
-    id = mapped_column(BigInteger, primary_key=True)
+    id: Mapped[int] = mapped_column(primary_key=True)
     tg_id = mapped_column(BigInteger)
-    username = mapped_column(String)
-    first_name = mapped_column(String)
-    last_name = mapped_column(String)
+    
     
 class Contacts(Base):
     __tablename__ = "contacts"
 
-    id = mapped_column(BigInteger, primary_key=True)
-    contact_type = mapped_column(String)
-    phone = mapped_column(String)
-    email = mapped_column(String)
-    working_hours = mapped_column(String)
-    holydays = mapped_column(String)
-    office_address = mapped_column(String)
-    website_links = relationship("WebsiteLinks", back_populates="contacts")
+    id: Mapped[int] = mapped_column(primary_key=True)
+    contact_type: Mapped[str] = mapped_column(String(50))
+    value: Mapped[str] = mapped_column(String(50))
 
-class WebsiteLinks(Base):
-    __tablename__ = "website_links"
-
-    id = mapped_column(BigInteger, primary_key=True)
-    name = mapped_column(String)
-    url = mapped_column(String)
-    contact_id = mapped_column(ForeignKey("contacts.id"))
-
-    contact = relationship("Contacts", back_populates="website_links")
 
 class Cases(Base):
     __tablename__ = "cases"
 
-    id = mapped_column(BigInteger, primary_key=True)
-    title = mapped_column(String)
-    description = mapped_column(String)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    title: Mapped[str] = mapped_column(String(50))
+    description: Mapped[str] = mapped_column(String(50))
     
 class Events(Base):
     __tablename__ = "events"
 
-    id = mapped_column(BigInteger, primary_key=True)
-    name = mapped_column(String)
-    description = mapped_column(String)
-    date = mapped_column(DateTime)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(50))
+    description: Mapped[str] = mapped_column(String(50))
+    date: Mapped[DateTime] = mapped_column(DateTime)
 
 class Services(Base):
     __tablename__ = "services"
 
-    id = mapped_column(BigInteger, primary_key=True)
-    name = mapped_column(String)
-    description = mapped_column(String)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(50))
+    description: Mapped[str] = mapped_column(String(50))
 
 class Briefing(Base):
     __tablename__ = "briefing"
 
-    id = mapped_column(BigInteger, primary_key=True)
-    instructions = mapped_column(String)
-    question = mapped_column(String)
-    answer = mapped_column(String)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    instructions: Mapped[str] = mapped_column(String(500))
+    question: Mapped[str] = mapped_column(String(500))
+    answer: Mapped[str] = mapped_column(String(100))
   
 
 async def async_main():
