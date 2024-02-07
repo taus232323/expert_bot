@@ -1,5 +1,5 @@
 from app.database.models import async_session, User, Contacts, Events, Cases, Briefing, Services
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, update
 from typing import List
 
 
@@ -32,11 +32,16 @@ async def delete_contacts():
         for contact in contacts.scalars().all():
             await session.delete(contact)
         await session.commit()
-    
-async def edit_contacts(id):
+        
+async def get_contact_by_id(id):
     async with async_session() as session:
         contact = await session.scalar(select(Contacts).where(Contacts.id == id))
-        await session.update(contact)
+        return contact
+    
+async def edit_contact(id):
+    async with async_session() as session:
+        contact = await session.scalar(select(Contacts).where(Contacts.id == id))
+        session.update(Contacts(**data)
         await session.commit()
     
 async def get_cases() -> List[Cases]:

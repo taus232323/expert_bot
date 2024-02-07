@@ -23,8 +23,12 @@ async def cmd_start(message: Message):
 @router.message(F.text == "Контакты")
 async def contact_selected(message: Message):
     contacts = await get_contacts()   
-    contact_info = "\n".join([f"{contact.contact_type}: {contact.value}" for contact in contacts])
-    await message.answer(f"Моя контактная информация и график работы:\n{contact_info}")
+    counter = 0
+    for contact in contacts:
+        contact_info = "\n".join([f"{contact.contact_type}: {contact.value}" ])
+        await message.answer(f"Моя контактная информация и график работы:\n{contact_info}")
+        counter += 1
+    await message.answer("Контактная информация отсутствует") if counter == 0 else None
     if message.from_user.id in ADMIN_USER_IDS:
         await message.answer("Выберите желаемую опцию:", reply_markup = kb.contacts_kb)
    

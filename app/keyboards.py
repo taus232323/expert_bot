@@ -1,5 +1,5 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton
-from app.database.requests import get_contacts, get_briefing, get_services, get_cases, get_events, edit_contacts
+from app.database.requests import get_contacts, get_briefing, get_services, get_cases, get_events, edit_contact, get_contact_by_id
 from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
 
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
@@ -16,19 +16,23 @@ user_main = ReplyKeyboardMarkup(
 )
 
 contacts_kb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text='Добавить ещё', callback_data='add_contact')],
-            [InlineKeyboardButton(text='Изменить', callback_data='edit_contact'),
-            InlineKeyboardButton(text='Удалить', callback_data='delete_contact')]])
+        [InlineKeyboardButton(text='Добавить', callback_data='add_contact'),
+        InlineKeyboardButton(text='Изменить', callback_data='edit_contacts')],
+            [InlineKeyboardButton(text='Удалить', callback_data='delete_contact'),
+            InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
 
 confirm_delete_contacts = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Согласен', callback_data='confirmed_delete_contacts'),
             InlineKeyboardButton(text='Отмена', callback_data='cancel_delete')]])
 
-async def edit_contact_kb(contact_id):
-    edit_contact_kb = InlineKeyboardBuilder()
-    contacts = await edit_contacts(contact_id)
-    edit_contact_kb.add(InlineKeyboardButton(text=contacts.contact_type,
-                                      callback_data=f'edit_contact_{contact_id}'))
+async def edit_contact_kb():
+    contacts = await get_contacts()
+    keyboard = InlineKeyboardBuilder()
+    for contact in contacts:
+        keyboard.add(InlineKeyboardButton(text=contact.contact_type,
+                                      callback_data=f'edit_contact_{contact.id}'))
+    keyboard.add(InlineKeyboardButton(text='Отмена', callback_data='cancel_action'))
+    return keyboard.adjust(2).as_markup()
 
 async def get_events_keyboard():
     events_kb = InlineKeyboardMarkup(row_width=2)

@@ -5,7 +5,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
 import app.keyboards as kb
-from app.database.requests import get_users, set_contact, get_contacts, delete_contacts, edit_contacts
+from app.database.requests import get_users, set_contact, get_contacts, delete_contacts, edit_contact, get_contact_by_id
 
 
 admin = Router()
@@ -17,6 +17,11 @@ class Newsletter(StatesGroup):
 
 
 class AddContact(StatesGroup):
+    contact_type = State()
+    contact_value = State()
+
+class EditContact(StatesGroup):
+    id = State()
     contact_type = State()
     contact_value = State()
 
@@ -54,20 +59,43 @@ async def add_contact_value(message: Message, state: FSMContext):
     
     
 @admin.callback_query(AdminProtect(), F.data =="add_contact")
-async def add_more_contact(call: CallbackQuery, state: FSMContext):
-    await call.message.delete_reply_markup()
+async def add_more_contact(callback: CallbackQuery, state: FSMContext):
     await state.set_state(AddContact.contact_type)
-    await call.message.answer(contact_type_hint)
+    await callback.message.edit_text(contact_type_hint)
 
+@admin.callback_query(AdminProtect(), F.data == "edit_contacts")
+async def edit_contact(callback: CallbackQuery):
+    await callback.answer("")
+    await callback.message.edit_text("Выберите контактную для изменения", 
+                                  reply_markup=await kb.edit_contact_kb())
+    
 @admin.callback_query(AdminProtect(), F.data.startswith("edit_contact_"))
-async def edit_contacts(callback: CallbackQuery):
-    await callback.message.delete_reply_markup()
-    await edit_contacts(callback.data.split("_")[2])
+async def start_edit_contact(callback: CallbackQuery, state: FSMContext):
+    await state.update_data(id=callback.data.split('_')[2])
+    await state.set_state(EditContact.contact_type)
+    await callback.message.edit_text(contact_type_hint)
+
+    
+@admin.message(AdminProtect(), EditContact.contact_type)
+async def edit_contact_type(message: Message, state: FSMContext):
+    await state.update_data(contact_type=message.text)
+    await state.set_state(EditContact.contact_value)
+    await message.answer('Введите контактную информацию')
+    
+@admin.message(AdminProtect(), EditContact.contact_value)
+async def edit_contact_value(message: Message, state: FSMContext):
+    await state.update_data(value=message.text)
+    data = await state.get_data()
+    await edit_contact(data)
+    await state.clear()
+    await message.answer('Контактная информация успешно изменена')
+    contacts = await get_contacts()
+    contact_info = "\n".join([f"{contact.contact_type}: {contact.value}" for contact in contacts])
+    await message.answer(f"Моя контактная информация и график работы:\n{contact_info}", reply_markup=kb.contacts_kb)
     
 @admin.callback_query(AdminProtect(), F.data == "delete_contact")
 async def delete_contact(callback: CallbackQuery):
-    await callback.message.delete_reply_markup()
-    await callback.message.answer("Эта операция удалит всю контактную информацию. Вы уверены?",
+    await callback.message.edit_text("Эта операция удалит всю контактную информацию. Вы уверены?",
                                   reply_markup=kb.confirm_delete_contacts)
     
 @admin.callback_query(AdminProtect(), F.data == "confirmed_delete_contacts")
