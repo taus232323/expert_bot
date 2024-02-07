@@ -1,5 +1,5 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton
-from app.database.requests import get_contacts, get_briefing, get_services, get_cases, get_events, edit_contact, get_contact_by_id
+from app.database.requests import get_contacts, get_briefing, get_services, get_cases, get_events, edit_contact, get_case_by_id
 from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
 
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
@@ -25,6 +25,14 @@ confirm_delete_contacts = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Согласен', callback_data='confirmed_delete_contacts'),
             InlineKeyboardButton(text='Отмена', callback_data='cancel_delete')]])
 
+add_case_kb = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='Добавить', callback_data='add_case'),
+    InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
+
+edit_cases_kb = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='Изменить', callback_data='edit_cases'),
+    InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
+
 async def edit_contact_kb():
     contacts = await get_contacts()
     keyboard = InlineKeyboardBuilder()
@@ -33,6 +41,27 @@ async def edit_contact_kb():
                                       callback_data=f'edit_contact_{contact.id}'))
     keyboard.add(InlineKeyboardButton(text='Отмена', callback_data='cancel_action'))
     return keyboard.adjust(2).as_markup()
+
+async def get_cases_keyboard():
+    cases = await get_cases()
+    keyboard = InlineKeyboardBuilder()
+    for case in cases:
+        keyboard.add(InlineKeyboardButton(text=case.title, callback_data=f'cases_{case.id}'))
+    return keyboard.adjust(2).as_markup()
+
+async def case_keyboard(case_id):
+    case = await get_case_by_id(case_id)
+    keyboard = InlineKeyboardBuilder()
+    keyboard.add(InlineKeyboardButton(text='Отмена', callback_data='cancel_action'))
+    return keyboard.adjust(2).as_markup()
+
+
+
+
+
+
+
+
 
 async def get_events_keyboard():
     events_kb = InlineKeyboardMarkup(row_width=2)
@@ -55,9 +84,3 @@ async def get_briefing_keyboard():
         briefing_kb.add(InlineKeyboardButton(text=briefing.name, callback_data=f'briefing_{briefing.id}'))
     return briefing_kb.adjust(2).as_markup()
 
-async def get_cases_keyboard():
-    cases_kb = InlineKeyboardMarkup(row_width=2)
-    cases = await get_cases()
-    for case in cases:
-        cases_kb.add(InlineKeyboardButton(text=cases.name, callback_data=f'cases_{cases.id}'))
-    return cases_kb.adjust(2).as_markup()

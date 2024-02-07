@@ -16,15 +16,15 @@ async def get_users():
         users = await session.scalars(select(User))
         return users
 
-async def set_contact(data):
-    async with async_session() as session:
-        session.add(Contacts(**data))
-        await session.commit()  
-        
 async def get_contacts():
     async with async_session() as session:
         contacts = await session.scalars(select(Contacts))
         return contacts
+
+async def set_contact(data):
+    async with async_session() as session:
+        session.add(Contacts(**data))
+        await session.commit()  
     
 async def delete_contacts():
     async with async_session() as session:
@@ -32,22 +32,47 @@ async def delete_contacts():
         for contact in contacts.scalars().all():
             await session.delete(contact)
         await session.commit()
-        
-async def get_contact_by_id(id):
-    async with async_session() as session:
-        contact = await session.scalar(select(Contacts).where(Contacts.id == id))
-        return contact
     
-async def edit_contact(id):
+async def edit_contact(data):
     async with async_session() as session:
-        contact = await session.scalar(select(Contacts).where(Contacts.id == id))
-        session.update(Contacts(**data)
+        await session.execute(
+            update(Contacts).where(Contacts.id == data["id"]).values({
+                Contacts.contact_type: data['contact_type'],
+                Contacts.value: data['value']}))
         await session.commit()
     
-async def get_cases() -> List[Cases]:
+async def get_cases():
     async with async_session() as session:
-        result = await session.scalar(select(Cases))
-        return result
+        cases = await session.scalars(select(Cases))
+        return cases
+    
+async def get_case_by_id(case_id: int):
+    async with async_session() as session:
+        case = await session.scalar(select(Cases).where(Cases.id == case_id))
+        return case
+    
+async def set_case(data):
+    async with async_session() as session:
+        session.add(Cases(**data))
+        await session.commit()
+
+async def delete_case(case_id):
+    async with async_session() as session:
+        case = await session.execute(select(Cases).where(Cases.id == case_id))
+        await session.execute(delete(case))
+        await session.commit()
+
+async def edit_case(data):
+    async with async_session() as session:
+        await session.execute(
+            update(Cases).where(Cases.id == data["id"]).values({
+                Cases.name: data['title'],
+                Cases.description: data['description']}))
+        await session.commit()
+
+
+
+
 
 async def get_events() -> List[Events]:
     async with async_session() as session:
