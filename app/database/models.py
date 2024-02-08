@@ -45,7 +45,7 @@ class Services(Base):
     __tablename__ = "services"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(50))
+    title: Mapped[str] = mapped_column(String(50))
     description: Mapped[str] = mapped_column(String(50))
 
 class Briefing(Base):

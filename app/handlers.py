@@ -4,8 +4,9 @@ from aiogram.filters import CommandStart
 
 from settings import ADMIN_USER_IDS
 import app.keyboards as kb
-from app.database.requests import get_contacts, set_user, get_cases, get_case_by_id
+from app.database.requests import get_contacts, set_user, get_cases, get_case_by_id, get_services, get_service_by_id
 
+chosen_case_id = None
 
 router = Router()
 
@@ -38,20 +39,40 @@ async def cases_selected(message: Message):
     cases_list = "\n".join([f"{case.title}" for case in cases])
     if len(cases_list) < 2:
         await message.answer("Кейсы отсутствуют")
+    if message.from_user.id in ADMIN_USER_IDS:
+        await message.answer("Выберите кейс для изменения/удаления или добавьте новый", 
+                             reply_markup=await kb.admin_get_cases_keyboard())
     else:
         await message.answer("Мои самые лучшие кейсы:", reply_markup=await kb.get_cases_keyboard())
-    if message.from_user.id in ADMIN_USER_IDS:
-            await message.answer("Выберите желаемую опцию:", reply_markup=kb.add_case_kb)
-
-@router.message(F.data.startswith("cases_"))    
-async def case_detail_selected(callback: CallbackQuery):
-    await callback.message.answer("case_selected")
-    case = await get_case_by_id(callback.data.split("_")[1])
-    await callback.answer('')
-    await callback.message.answer(f"<b>{case.title}</b>\n\n{case.description}")
-    if callback.from_user.id in ADMIN_USER_IDS:
-        await callback.message.answer("Выберите желаемую опцию:", reply_markup=kb.edit_case_kb)
     
+@router.callback_query(F.data.startswith("cases_"))    
+async def case_detail_selected(callback: CallbackQuery):
+    case = await get_case_by_id(callback.data.split("_")[1])
+    if callback.from_user.id in ADMIN_USER_IDS:
+        await callback.message.edit_text(f"<b>{case.title}</b>\n\n{case.description}", reply_markup=await kb.case_chosen_keyboard(case.id))
+    else:
+        await callback.message.edit_text(f"<b>{case.title}</b>\n\n{case.description}")
+        
+@router.message(F.text == "Услуги")
+async def service_selected(message: Message):
+    services  = await get_services()
+    services_list = "\n".join([f"{service.title}" for service in services])
+    if len(services_list) < 2:
+        await message.answer("Услуги отсутствуют")
+    if message.from_user.id in ADMIN_USER_IDS:
+        await message.answer("Выберите услугу для изменения/удаления или добавьте новую",
+                             reply_markup=await kb.admin_get_services_keyboard())
+    else:
+        await message.answer("Мои самые выгодные услуги:", reply_markup=await kb.get_services_keyboard())
+        
+@router.callback_query(F.data.startswith("services_"))
+async def service_detail_selected(callback: CallbackQuery):
+    service = await get_service_by_id(callback.data.split("_")[1])
+    if callback.from_user.id in ADMIN_USER_IDS:
+        await callback.message.edit_text(f"<b>{service.title}</b>\n\n{service.description}", reply_markup=await kb.service_chosen_keyboard(service.id))
+    else:
+        await callback.message.edit_text(f"<b>{service.title}</b>\n\n{service.description}")
+               
 
 
 

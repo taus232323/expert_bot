@@ -32,7 +32,7 @@ async def delete_contacts():
         for contact in contacts.scalars().all():
             await session.delete(contact)
         await session.commit()
-    
+
 async def edit_contact(data):
     async with async_session() as session:
         await session.execute(
@@ -56,34 +56,63 @@ async def set_case(data):
         session.add(Cases(**data))
         await session.commit()
 
-async def delete_case(case_id):
+async def delete_case(case_id: int):
     async with async_session() as session:
-        case = await session.execute(select(Cases).where(Cases.id == case_id))
-        await session.execute(delete(case))
+        await session.execute(delete(Cases).where(Cases.id == case_id))
         await session.commit()
-
+        
 async def edit_case(data):
     async with async_session() as session:
         await session.execute(
             update(Cases).where(Cases.id == data["id"]).values({
-                Cases.name: data['title'],
+                Cases.title: data['title'],
                 Cases.description: data['description']}))
         await session.commit()
 
-
-
-
-
-async def get_events() -> List[Events]:
-    async with async_session() as session:
-        result = await session.scalar(select(Events))
-        return result
-
-async def get_services() -> List[Services]:
+async def get_services():
     async with async_session() as session:
         result = await session.scalars(select(Services))
         return result
-    
+
+async def get_service_by_id(service_id: int):
+    async with async_session() as session:
+        service = await session.scalar(select(Services).where(Services.id == service_id))
+        return service
+
+async def set_service(data):
+    async with async_session() as session:
+        session.add(Services(**data))
+        await session.commit()
+        
+async def delete_service(service_id: int):
+    async with async_session() as session:
+        await session.execute(delete(Services).where(Services.id == service_id))
+        await session.commit()
+        
+async def edit_service(data):
+    async with async_session() as session:
+        await session.execute(
+            update(Services).where(Services.id == data["id"]).values({
+                Services.title: data['title'],
+                Services.description: data['description']}))
+        await session.commit()
+     
+
+
+
+
+
+
+
+
+
+
+
+async def get_events():
+    async with async_session() as session:
+        result = await session.scalar(select(Events))
+        return result
+ 
 async def get_briefing() -> List[Briefing]:
     async with async_session() as session:
         result = await session.scalars(select(Briefing))

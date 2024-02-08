@@ -3,14 +3,22 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.filters import CommandStart, Command, Filter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
+from settings import ADMIN_USER_IDS
 
 import app.keyboards as kb
-from app.database.requests import get_users, set_contact, get_contacts, delete_contacts, edit_contact, set_case
-
+from app.database.requests import (get_users, set_contact, get_contacts, delete_contacts, 
+                                   edit_contact, set_case, delete_case, edit_case, set_service,
+                                   delete_service, edit_service, )
+from app.handlers import chosen_case_id
 
 admin = Router()
 contact_type_hint = "Введите тип контактной информации. Например: Фамилия, Имя, Отчество; Телефон; Адрес офиса; График работы; Ссылка на сайт, или социальные сети (Вводить по одной ссылке)"
 admin_hint = f"Возможные команды:\n\n/newsletter - Сделать рассылку\n\n/add_contact - Добавить контактную информацию\n\n/add_case - Добавить Кейс\n\n/add_event - Добавить Мероприятие\n\n/add_service - Добавить Услугу\n\n/create_briefing - Создать брифинг"
+     
+class AdminProtect(Filter):
+    async def __call__(self, message: Message):
+        return message.from_user.id in ADMIN_USER_IDS
+     
                                          
 class Newsletter(StatesGroup):
     message = State()
@@ -37,9 +45,16 @@ class EditCase(StatesGroup):
     title = State()
     description = State()
         
-class AdminProtect(Filter):
-    async def __call__(self, message: Message):
-        return message.from_user.id in [5348838446]
+        
+class AddService(StatesGroup):
+    title = State()
+    description = State()
+    
+
+class EditService(StatesGroup):
+    id = State()
+    title = State()
+    description = State()
 
 
 @admin.message(AdminProtect(), Command('apanel'))
@@ -80,9 +95,8 @@ async def edit_contacts(callback: CallbackQuery):
                                   reply_markup=await kb.edit_contact_kb())
     
 @admin.callback_query(AdminProtect(), F.data.startswith("edit_contact_"))
-async def start_edit_contact(callback: CallbackQuery, state: FSMContext):
+async def edit_contact_selected(callback: CallbackQuery, state: FSMContext):
     await state.update_data(id=callback.data.split('_')[2])
-    print(str(callback.data.split('_')[2]))
     await state.set_state(EditContact.contact_type)
     await callback.message.edit_text(contact_type_hint)
    
@@ -136,12 +150,83 @@ async def add_case_description(message: Message, state: FSMContext):
     data = await state.get_data()
     await set_case(data)
     await state.clear()
-    await message.answer('Кейс успешно добавлен', reply_markup= await kb.get_cases_keyboard)
-    await message.answer("Выберите желаемую опцию:", reply_markup = kb.add_case_kb)
+    await message.answer('Кейс успешно добавлен', reply_markup=await kb.admin_get_cases_keyboard())
 
-@admin.callback_query(AdminProtect(), F.data == "delete_case")
-async def delete_case(callback: CallbackQuery):
-    pass
+@admin.callback_query(AdminProtect(), F.data.startswith("delete_case_"))
+async def delete_case_selected(callback: CallbackQuery):
+    await delete_case(callback.data.split('_')[2])
+    await callback.answer("Кейс успешно удалён")
+    await callback.message.edit_text("Мои самые лучшие кейсы", reply_markup=await kb.admin_get_cases_keyboard())
+    
+@admin.callback_query(AdminProtect(), F.data.startswith("edit_case_"))
+async def edit_case_selected(callback: CallbackQuery, state: FSMContext):
+    await state.update_data(id=callback.data.split('_')[2])
+    await state.set_state(EditCase.title)
+    await callback.message.edit_text('Введите название кейса')
+    
+@admin.message(AdminProtect(), EditCase.title)
+async def edit_case_title(message: Message, state: FSMContext):
+    await state.update_data(title=message.text)
+    await state.set_state(EditCase.description)
+    await message.answer('Введите описание кейса')
+
+@admin.message(AdminProtect(), EditCase.description)
+async def edit_case_description(message: Message, state: FSMContext):
+    await state.update_data(description=message.text)
+    data = await state.get_data()
+    await edit_case(data)
+    await state.clear()
+    await message.answer('Кейс успешно изменён', reply_markup=await kb.admin_get_cases_keyboard())
+
+@admin.message(AdminProtect(), Command('add_service'))
+async def add_service(message: Message, state: FSMContext):
+    await state.set_state(AddService.title)
+    await message.answer('Введите название услуги')
+    
+@admin.callback_query(AdminProtect(), F.data == "add_service")
+async def add_more_service(callback: CallbackQuery, state: FSMContext):
+    await state.set_state(AddService.title)
+    await callback.message.edit_text('Введите название услуги')
+
+@admin.message(AdminProtect(), AddService.title)
+async def add_service_title(message: Message, state: FSMContext):
+    await state.update_data(title=message.text)
+    await state.set_state(AddService.description)
+    await message.answer('Введите описание услуги')
+    
+@admin.message(AdminProtect(), AddService.description)
+async def add_service_description(message: Message, state: FSMContext):
+    await state.update_data(description=message.text)
+    data = await state.get_data()
+    await set_service(data)
+    await state.clear()
+    await message.answer('Услуга успешно добавлена', reply_markup=await kb.admin_get_services_keyboard())
+
+@admin.callback_query(AdminProtect(), F.data.startswith("delete_service_"))
+async def delete_service_selected(callback: CallbackQuery):
+    await delete_service(callback.data.split('_')[2])
+    await callback.answer("Услуга успешно удалена")
+    await callback.message.edit_text("Мои самые выгодные услуги", reply_markup=await kb.admin_get_services_keyboard())
+
+@admin.callback_query(AdminProtect(), F.data.startswith("edit_service_"))
+async def edit_service_selected(callback: CallbackQuery, state: FSMContext):
+    await state.update_data(id=callback.data.split('_')[2])
+    await state.set_state(EditService.title)
+    await callback.message.edit_text('Введите название услуги')
+    
+@admin.message(AdminProtect(), EditService.title)
+async def edit_service_title(message: Message, state: FSMContext):
+    await state.update_data(title=message.text)
+    await state.set_state(EditService.description)
+    await message.answer('Введите описание услуги')
+    
+@admin.message(AdminProtect(), EditService.description)
+async def edit_service_description(message: Message, state: FSMContext):
+    await state.update_data(description=message.text)
+    data = await state.get_data()
+    await edit_service(data)
+    await state.clear()
+    await message.answer('Услуга успешно изменена', reply_markup=await kb.admin_get_services_keyboard())
 
 
 

@@ -11,7 +11,7 @@ from settings import TOKEN
 async def main():
     await async_main()
     
-    bot = Bot(token=TOKEN)
+    bot = Bot(token=TOKEN, parse_mode='HTML')
     dp = Dispatcher()
     dp.include_routers(admin, router)
     await dp.start_polling(bot)
