@@ -30,23 +30,23 @@ class Cases(Base):
     __tablename__ = "cases"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    title: Mapped[str] = mapped_column(String(50))
-    description: Mapped[str] = mapped_column(String(50))
+    title: Mapped[str] = mapped_column(String(100))
+    description: Mapped[str] = mapped_column(String(1024))
     
 class Events(Base):
     __tablename__ = "events"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(50))
-    description: Mapped[str] = mapped_column(String(50))
+    title: Mapped[str] = mapped_column(String(100))
+    description: Mapped[str] = mapped_column(String(1024))
     date: Mapped[DateTime] = mapped_column(DateTime)
 
 class Services(Base):
     __tablename__ = "services"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    title: Mapped[str] = mapped_column(String(50))
-    description: Mapped[str] = mapped_column(String(50))
+    title: Mapped[str] = mapped_column(String(100))
+    description: Mapped[str] = mapped_column(String(1024))
 
 class Briefing(Base):
     __tablename__ = "briefing"

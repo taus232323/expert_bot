@@ -1,6 +1,6 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton
 from app.database.requests import (get_contacts, get_briefing, get_services, get_cases, 
-                                   get_events, get_service_by_id, get_services)
+                                   get_events, get_services)
 from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
 
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
@@ -42,6 +42,7 @@ async def get_cases_keyboard():
         keyboard.add(InlineKeyboardButton(text=case.title, callback_data=f'cases_{case.id}'))
     return keyboard.adjust(1).as_markup()
 
+
 async def admin_get_cases_keyboard():
     cases = await get_cases()
     keyboard = InlineKeyboardBuilder()
@@ -65,6 +66,7 @@ async def get_services_keyboard():
         keyboard.add(InlineKeyboardButton(text=service.title, callback_data=f'services_{service.id}'))
     return keyboard.adjust(1).as_markup()
 
+
 async def admin_get_services_keyboard():
     services = await get_services()
     keyboard = InlineKeyboardBuilder()
@@ -74,6 +76,7 @@ async def admin_get_services_keyboard():
                  InlineKeyboardButton(text='Отмена', callback_data='cancel_action'))
     return keyboard.adjust(1).as_markup()
 
+
 async def service_chosen_keyboard(service_id):
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Изменить', callback_data=f'edit_service_{service_id}'),
@@ -81,20 +84,36 @@ async def service_chosen_keyboard(service_id):
     [InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
     return keyboard
     
-
-
-
-
-
-
-
-
 async def get_events_keyboard():
-    events_kb = InlineKeyboardMarkup(row_width=2)
     events = await get_events()
+    keyboard = InlineKeyboardBuilder()
     for event in events:
-        events_kb.add(InlineKeyboardButton(text=events.name, callback_data=f'events_{events.id}'))
-    return events_kb.adjust(2).as_markup()
+        keyboard.add(InlineKeyboardButton(text=event.title, callback_data=f'events{event.id}'))
+    return keyboard.adjust(1).as_markup()
+
+async def admin_get_events_keyboard():
+    events = await get_events()
+    keyboard = InlineKeyboardBuilder()
+    for event in events:
+        keyboard.add(InlineKeyboardButton(text=event.title, callback_data=f'events{event.id}'))
+    keyboard.add(InlineKeyboardButton(text='Добавить мероприятие', callback_data='add_event'),
+                 InlineKeyboardButton(text='Отмена', callback_data='cancel_action'))
+    return keyboard.adjust(1).as_markup()
+
+async def event_chosen_keyboard(event_id):
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='Изменить', callback_data=f'edit_event_{event_id}'),
+    InlineKeyboardButton(text='Удалить', callback_data=f'delete_event_{event_id}')],
+    [InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
+    return keyboard
+
+
+
+
+
+
+
+
 
 
 async def get_briefing_keyboard():

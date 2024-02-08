@@ -71,8 +71,8 @@ async def edit_case(data):
 
 async def get_services():
     async with async_session() as session:
-        result = await session.scalars(select(Services))
-        return result
+        services = await session.scalars(select(Services))
+        return services
 
 async def get_service_by_id(service_id: int):
     async with async_session() as session:
@@ -96,7 +96,35 @@ async def edit_service(data):
                 Services.title: data['title'],
                 Services.description: data['description']}))
         await session.commit()
-     
+
+async def get_events():
+    async with async_session() as session:
+        events = await session.scalars(select(Events))
+        return events
+    
+async def get_event_by_id(event_id: int):
+    async with async_session() as session:
+        event = await session.scalar(select(Events).where(Events.id == event_id))
+        return event
+    
+async def set_event(data):
+    async with async_session() as session:
+        session.add(Events(**data))
+        await session.commit()
+
+async def delete_event(event_id: int):
+    async with async_session() as session:
+        await session.execute(delete(Events).where(Events.id == event_id))
+        await session.commit()
+
+async def edit_event(data):
+    async with async_session() as session:
+        await session.execute(
+            update(Events).where(Events.id == data["id"]).values({
+                Events.title: data['title'],
+                Events.description: data['description'],
+                Events.date: data['date']}))
+        await session.commit()
 
 
 

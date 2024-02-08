@@ -8,8 +8,7 @@ from settings import ADMIN_USER_IDS
 import app.keyboards as kb
 from app.database.requests import (get_users, set_contact, get_contacts, delete_contacts, 
                                    edit_contact, set_case, delete_case, edit_case, set_service,
-                                   delete_service, edit_service, )
-from app.handlers import chosen_case_id
+                                   delete_service, edit_service, set_event, delete_event, edit_event,)
 
 admin = Router()
 contact_type_hint = "Введите тип контактной информации. Например: Фамилия, Имя, Отчество; Телефон; Адрес офиса; График работы; Ссылка на сайт, или социальные сети (Вводить по одной ссылке)"
@@ -56,6 +55,17 @@ class EditService(StatesGroup):
     title = State()
     description = State()
 
+class AddEvent(StatesGroup):
+    title = State()
+    description = State()
+    date = State()
+    
+    
+class EditEvent(StatesGroup):
+    id = State()
+    title = State()
+    description = State()
+    date = State()
 
 @admin.message(AdminProtect(), Command('apanel'))
 async def apanel(message: Message):
@@ -229,6 +239,67 @@ async def edit_service_description(message: Message, state: FSMContext):
     await message.answer('Услуга успешно изменена', reply_markup=await kb.admin_get_services_keyboard())
 
 
+@admin.message(AdminProtect(), Command('add_event'))
+async def add_event(message: Message, state: FSMContext):
+    await state.set_state(AddEvent.title)
+    await message.answer('Введите название события')
+    
+@admin.callback_query(AdminProtect(), F.data == "add_event")
+async def add_more_event(callback: CallbackQuery, state: FSMContext):
+    await state.set_state(AddEvent.title)
+    await callback.message.edit_text('Введите название события')
+    
+@admin.message(AdminProtect(), AddEvent.title)
+async def add_event_title(message: Message, state: FSMContext):
+    await state.update_data(title=message.text)
+    await state.set_state(AddEvent.description)
+    await message.answer('Введите описание события')
+    
+@admin.message(AdminProtect(), AddEvent.description)
+async def add_event_description(message: Message, state: FSMContext):
+    await state.update_data(description=message.text)
+    await state.set_state(AddEvent.date)
+    await message.answer('Введите дату события в формате ДД.ММ.ГГГГ')
+    
+@admin.message(AdminProtect(), AddEvent.date)
+async def add_event_date(message: Message, state: FSMContext):
+    await state.update_data(date=message.text)
+    data = await state.get_data()
+    await set_event(data)
+    await state.clear()
+    await message.answer('Событие успешно добавлено', reply_markup=await kb.admin_get_events_keyboard())
+    
+@admin.callback_query(AdminProtect(), F.data.startswith("delete_event_"))
+async def delete_event_selected(callback: CallbackQuery):
+    await delete_event(callback.data.split('_')[2])
+    await callback.answer("Событие успешно удалено")
+    await callback.message.edit_text("Мои самые интересные события", reply_markup=await kb.admin_get_events_keyboard())
+    
+@admin.callback_query(AdminProtect(), F.data.startswith("edit_event_"))
+async def edit_event_selected(callback: CallbackQuery, state: FSMContext):
+    await state.update_data(id=callback.data.split('_')[2])
+    await state.set_state(EditEvent.title)
+    await callback.message.edit_text('Введите название события')
+    
+@admin.message(AdminProtect(), EditEvent.title)
+async def edit_event_title(message: Message, state: FSMContext):
+    await state.update_data(title=message.text)
+    await state.set_state(EditEvent.description)
+    await message.answer('Введите описание события')
+    
+@admin.message(AdminProtect(), EditEvent.description)
+async def edit_event_description(message: Message, state: FSMContext):
+    await state.update_data(description=message.text)
+    await state.set_state(EditEvent.date)
+    await message.answer('Введите дату события в формате ДД.ММ.ГГГГ')
+    
+@admin.message(AdminProtect(), EditEvent.date)
+async def edit_event_date(message: Message, state: FSMContext):
+    await state.update_data(date=message.text)
+    data = await state.get_data()
+    await edit_event(data)
+    await state.clear()
+    await message.answer('Событие успешно изменено', reply_markup=await kb.admin_get_events_keyboard())
 
 
 

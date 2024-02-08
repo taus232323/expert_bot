@@ -4,9 +4,9 @@ from aiogram.filters import CommandStart
 
 from settings import ADMIN_USER_IDS
 import app.keyboards as kb
-from app.database.requests import get_contacts, set_user, get_cases, get_case_by_id, get_services, get_service_by_id
+from app.database.requests import (get_contacts, set_user, get_cases, get_case_by_id, get_services, get_service_by_id,
+                                   get_events, get_event_by_id, )
 
-chosen_case_id = None
 
 router = Router()
 
@@ -73,66 +73,28 @@ async def service_detail_selected(callback: CallbackQuery):
     else:
         await callback.message.edit_text(f"<b>{service.title}</b>\n\n{service.description}")
                
+@router.message(F.text == "Мероприятия")
+async def event_selected(message: Message):
+    events = await get_events()
+    events_list = "\n".join([f"{event.title}" for event in events])
+    if len(events_list) < 2:
+        await message.answer("Мероприятия отсутствуют")
+    if message.from_user.id in ADMIN_USER_IDS:
+        await message.answer("Выберите мероприятие для изменения/удаления или добавьте новое",
+                             reply_markup=await kb.admin_get_events_keyboard())
+    else:
+        await message.answer("Мои самые интересные мероприятия:", reply_markup=await kb.get_events_keyboard())
+
+@router.callback_query(F.data.startswith("events_"))
+async def event_detail_selected(callback: CallbackQuery):
+    event = await get_event_by_id(callback.data.split("_")[1])
+    if callback.from_user.id in ADMIN_USER_IDS:
+        await callback.message.edit_text(f"<b>{event.title}</b>\n\n{event.description}\n\n<b>{event.date}</b>",
+                                         reply_markup=await kb.event_chosen_keyboard(event.id))
+    else:
+        await callback.message.edit_text(f"<b>{event.title}</b>\n\n{event.description}")
 
 
-
-
-
-# @router.callback_query(F.data.startswith("event_detail_"))
-# async def event_detail_selected(callback: CallbackQuery):
-#     event_id = callback.data.split("_")[2]
-#     event = await kb.get_event(event_id)
-#     text = f"<b>{event.name}</b>\n\n{event.description}\n\nДата проведения: {event.date}"
-#     if event.image_url:
-#         await callback.message.answer_photo(photo=event.image_url, caption=text, parse_mode='HTML')
-#     else:
-#         await callback.message.answer(text, parse_mode='HTML')
-#     await callback.answer()
-
-# @router.callback_query(F.data.startswith("services_"))
-# async def services_selected(callback: CallbackQuery):
-#     services = await kb.get_services()
-#     services_list = "\n".join([f"{service.name}" for service in services])
-#     await callback.message.answer(f"Мои услуги:\n{services_list}")
-#     await callback.answer()
-
-# @router.callback_query(F.data.startswith("service_detail_"))
-# async def service_detail_selected(callback: CallbackQuery):
-#     service_id = callback.data.split("_")[2]
-#     service = await kb.get_service(service_id)
-#     text = f"<b>{service.name}</b>"
-#     if service.description:
-#         text += f"\n\n{service.description}"
-#     if service.image_url:
-#         await callback.message.answer_photo(photo=service.image_url, caption=text, parse_mode='HTML')
-#     else:
-#         await callback.message.answer(text, parse_mode='HTML')
-#     await callback.answer()
-
-# @router.callback_query(F.data.startswith("cases_"))
-# async def cases_selected(callback: CallbackQuery):
-#     cases = await kb.get_cases()
-#     cases_list = "\n".join([f"{case.name}" for case in cases])
-#     await callback.message.answer(f"Мои кейсы:\n{cases_list}")
-#     await callback.answer()
-    
-# @router.callback_query(F.data.startswith("case_detail_"))
-# async def case_detail_selected(callback: CallbackQuery):
-#     case_id = callback.data.split("_")[2]
-#     case = await kb.get_case(case_id)
-#     text = f"<b>{case.name}</b>"
-#     if case.description:
-#         text += f"\n\n{case.description}"
-#     if case.image_url:
-#         await callback.message.answer_photo(photo=case.image_url, caption=text, parse_mode='HTML')
-#     else:
-#         await callback.message.answer(text, parse_mode='HTML')
-#     await callback.answer()
-
-# @router.callback_query(F.data.startswith("briefing_"))
-# async def briefing_selected(callback: CallbackQuery):
-#     await callback.message.answer(f"Брифинг", reply_markup=await kb.get_briefing_keyboard())
-#     await callback.answer()
 
 @router.message()
 async def echo(message: Message):
