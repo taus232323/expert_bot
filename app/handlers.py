@@ -5,12 +5,13 @@ from aiogram.filters import CommandStart
 from settings import ADMIN_USER_IDS
 import app.keyboards as kb
 from app.database.requests import (get_contacts, set_user, get_cases, get_case_by_id, get_services, get_service_by_id,
-                                   get_events, get_event_by_id, )
+                                   get_events, get_event_by_id, set_participant)
 
 
 router = Router()
 
 @router.message(CommandStart())
+
 async def cmd_start(message: Message):
     if isinstance(message, Message):
         await set_user(message.from_user.id)
@@ -20,6 +21,12 @@ async def cmd_start(message: Message):
     else:
         await message.answer(f"Добро пожаловать, {message.from_user.first_name}! "
                          "Выберите вариант из меню ниже", reply_markup=kb.user_main)
+
+@router.callback_query(F.data == "to_main")        
+async def to_main(callback: CallbackQuery):
+    await callback.message.delete()
+    await callback.message.answer(f"Выберите вариант из меню ниже", reply_markup=kb.user_main)
+
     
 @router.message(F.text == "Контакты")
 async def contact_selected(message: Message):
@@ -49,7 +56,8 @@ async def cases_selected(message: Message):
 async def case_detail_selected(callback: CallbackQuery):
     case = await get_case_by_id(callback.data.split("_")[1])
     if callback.from_user.id in ADMIN_USER_IDS:
-        await callback.message.edit_text(f"<b>{case.title}</b>\n\n{case.description}", reply_markup=await kb.case_chosen_keyboard(case.id))
+        await callback.message.edit_text(f"<b>{case.title}</b>\n\n{case.description}", 
+                                         reply_markup=await kb.case_chosen_keyboard(case.id))
     else:
         await callback.message.edit_text(f"<b>{case.title}</b>\n\n{case.description}")
         
@@ -69,7 +77,8 @@ async def service_selected(message: Message):
 async def service_detail_selected(callback: CallbackQuery):
     service = await get_service_by_id(callback.data.split("_")[1])
     if callback.from_user.id in ADMIN_USER_IDS:
-        await callback.message.edit_text(f"<b>{service.title}</b>\n\n{service.description}", reply_markup=await kb.service_chosen_keyboard(service.id))
+        await callback.message.edit_text(f"<b>{service.title}</b>\n\n{service.description}", 
+                                         reply_markup=await kb.service_chosen_keyboard(service.id))
     else:
         await callback.message.edit_text(f"<b>{service.title}</b>\n\n{service.description}")
                
@@ -88,13 +97,22 @@ async def event_selected(message: Message):
 @router.callback_query(F.data.startswith("events_"))
 async def event_detail_selected(callback: CallbackQuery):
     event = await get_event_by_id(callback.data.split("_")[1])
+    formatted_date = event.date.strftime('%Y-%m-%d %H:%M')
+    event_for_send = f"<b>{event.title}</b>\n\n{event.description}\n\n<b>{formatted_date}</b>"
+    user = callback.from_user
     if callback.from_user.id in ADMIN_USER_IDS:
-        await callback.message.edit_text(f"<b>{event.title}</b>\n\n{event.description}\n\n<b>{event.date}</b>",
-                                         reply_markup=await kb.event_chosen_keyboard(event.id))
+        await callback.message.edit_text(event_for_send, reply_markup=await kb.event_chosen_keyboard(event.id))
     else:
-        await callback.message.edit_text(f"<b>{event.title}</b>\n\n{event.description}")
+        await callback.message.edit_text(event_for_send, reply_markup=await kb.enroll_user_keyboard(event.id))
 
-
+@router.callback_query(F.data.startswith("enroll_"))
+async def enroll_user(callback: CallbackQuery):
+    await set_participant(tg_id=callback.from_user.id, event_id=callback.data.split("_")[2])
+    await callback.message.delete()
+    await callback.answer("Вы успешно записаны!", cache_time=2)
+    await callback.message.answer("Я напомню Вам о моем мероприятии, чтобы Вы не пропустили самое интересное. "
+                                     "А пока что можете выбрать вариант из меню ниже", reply_markup=kb.user_main)
+    
 
 @router.message()
 async def echo(message: Message):

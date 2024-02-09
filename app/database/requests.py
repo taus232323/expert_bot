@@ -1,19 +1,19 @@
-from app.database.models import async_session, User, Contacts, Events, Cases, Briefing, Services
+from app.database.models import async_session, Users, Contacts, Events, Cases, Briefing, Services, Participants
 from sqlalchemy import select, delete, update
 from typing import List
 
 
 async def set_user(tg_id):
     async with async_session() as session:
-        user = await session.scalar(select(User).where(User.tg_id == tg_id))
+        user = await session.scalar(select(Users).where(Users.tg_id == tg_id))
         
         if not user:
-            session.add(User(tg_id=tg_id))
+            session.add(Users(tg_id=tg_id))
             await session.commit()     
         
 async def get_users():
     async with async_session() as session:
-        users = await session.scalars(select(User))
+        users = await session.scalars(select(Users))
         return users
 
 async def get_contacts():
@@ -126,27 +126,20 @@ async def edit_event(data):
                 Events.date: data['date']}))
         await session.commit()
 
-
-
-
-
-
-
-
-
-
-
-async def get_events():
+async def set_participant(tg_id, event_id):
     async with async_session() as session:
-        result = await session.scalar(select(Events))
-        return result
- 
-async def get_briefing() -> List[Briefing]:
+        user = await session.scalar(select(Users).where(Users.tg_id == tg_id))
+        if user is None:
+            return "Пользователь не найден"
+        participant = Participants(user=user.id, event=event_id)
+        session.add(participant)
+        await session.commit()
+        
+async def get_participants(event_id: int):
     async with async_session() as session:
-        result = await session.scalars(select(Briefing))
-        return result
+        participants = await session.scalars(select(Participants).where(Participants.event == event_id))
+        return participants
 
-async def get_user(user_id) -> User:
-    async with async_session() as session:
-        result = await session.scalar(select(User).where(User.id == user_id))
-        return result
+        
+
+        

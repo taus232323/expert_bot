@@ -1,3 +1,4 @@
+from datetime import datetime
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 from aiogram.filters import CommandStart, Command, Filter
@@ -8,7 +9,8 @@ from settings import ADMIN_USER_IDS
 import app.keyboards as kb
 from app.database.requests import (get_users, set_contact, get_contacts, delete_contacts, 
                                    edit_contact, set_case, delete_case, edit_case, set_service,
-                                   delete_service, edit_service, set_event, delete_event, edit_event,)
+                                   delete_service, edit_service, set_event, delete_event, edit_event,
+                                   get_participants, get_event_by_id)
 
 admin = Router()
 contact_type_hint = "Введите тип контактной информации. Например: Фамилия, Имя, Отчество; Телефон; Адрес офиса; График работы; Ссылка на сайт, или социальные сети (Вводить по одной ссылке)"
@@ -75,7 +77,7 @@ async def apanel(message: Message):
 async def add_contact(message: Message, state: FSMContext):
     await state.set_state(AddContact.contact_type)
     await message.answer(contact_type_hint)
-
+    
 @admin.callback_query(AdminProtect(), F.data =="add_contact")
 async def add_more_contact(callback: CallbackQuery, state: FSMContext):
     await state.set_state(AddContact.contact_type)
@@ -259,15 +261,21 @@ async def add_event_title(message: Message, state: FSMContext):
 async def add_event_description(message: Message, state: FSMContext):
     await state.update_data(description=message.text)
     await state.set_state(AddEvent.date)
-    await message.answer('Введите дату события в формате ДД.ММ.ГГГГ')
+    await message.answer('Введите дату события в формате ДД.ММ.ГГГГ ЧЧ:ММ')
     
 @admin.message(AdminProtect(), AddEvent.date)
 async def add_event_date(message: Message, state: FSMContext):
-    await state.update_data(date=message.text)
-    data = await state.get_data()
-    await set_event(data)
-    await state.clear()
-    await message.answer('Событие успешно добавлено', reply_markup=await kb.admin_get_events_keyboard())
+    try:
+        date = datetime.strptime(message.text, '%d.%m.%Y %H:%M')
+    except ValueError:
+        await message.answer('Неверный формат даты и времени. Пожалуйста, введите дату и время события в формате ДД.ММ.ГГГГ ЧЧ:ММ')
+        return
+    else:
+        await state.update_data(date=date)
+        data = await state.get_data()
+        await set_event(data)
+        await state.clear()
+        await message.answer('Событие успешно добавлено', reply_markup=await kb.admin_get_events_keyboard())
     
 @admin.callback_query(AdminProtect(), F.data.startswith("delete_event_"))
 async def delete_event_selected(callback: CallbackQuery):
@@ -291,18 +299,32 @@ async def edit_event_title(message: Message, state: FSMContext):
 async def edit_event_description(message: Message, state: FSMContext):
     await state.update_data(description=message.text)
     await state.set_state(EditEvent.date)
-    await message.answer('Введите дату события в формате ДД.ММ.ГГГГ')
+    await message.answer('Введите дату события в формате ДД.ММ.ГГГГ ЧЧ:ММ')
     
 @admin.message(AdminProtect(), EditEvent.date)
 async def edit_event_date(message: Message, state: FSMContext):
-    await state.update_data(date=message.text)
-    data = await state.get_data()
-    await edit_event(data)
-    await state.clear()
-    await message.answer('Событие успешно изменено', reply_markup=await kb.admin_get_events_keyboard())
+    try:
+        date = datetime.strptime(message.text, '%d.%m.%Y %H:%M')
+    except ValueError:
+        await message.answer('Неверный формат даты и времени. Пожалуйста, введите дату и время события в формате ДД.ММ.ГГГГ ЧЧ:ММ')
+        return
+    else:
+        await state.update_data(date=date)
+        data = await state.get_data()
+        await edit_event(data)
+        await state.clear()
+        await message.answer('Событие успешно изменено', reply_markup=await kb.admin_get_events_keyboard())
 
-
-
+@admin.callback_query(AdminProtect(), F.data.startswith("participants_"))
+async def check_participants(callback: CallbackQuery):
+    event_id = callback.data.split("_")[1]
+    participants = await get_participants(event_id)
+    event = await get_event_by_id(event_id)
+    if not participants:
+        await callback.message.answer("Участников нет")
+    else:
+        for participant in participants:
+            await callback.message.answer(f"Список участников <b>{event.title}:</b>\n\n{participant.tg_id}\n")
 
 
 

@@ -2,6 +2,7 @@ from sqlalchemy import BigInteger, ForeignKey, DateTime, String
 from sqlalchemy.orm import relationship, mapped_column, DeclarativeBase, Mapped
 from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
 from settings import SQLALCHEMY_URL
+from typing import List
 
 engine = create_async_engine(SQLALCHEMY_URL, echo=True)
 async_session = async_sessionmaker(engine)
@@ -11,12 +12,13 @@ class Base(AsyncAttrs, DeclarativeBase):
     pass
 
 
-class User(Base):
+class Users(Base):
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     tg_id = mapped_column(BigInteger)
     
+    participants_rel: Mapped[List['Participants']] = relationship(back_populates="user_rel")
     
 class Contacts(Base):
     __tablename__ = "contacts"
@@ -32,14 +34,6 @@ class Cases(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str] = mapped_column(String(100))
     description: Mapped[str] = mapped_column(String(1024))
-    
-class Events(Base):
-    __tablename__ = "events"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    title: Mapped[str] = mapped_column(String(100))
-    description: Mapped[str] = mapped_column(String(1024))
-    date: Mapped[DateTime] = mapped_column(DateTime)
 
 class Services(Base):
     __tablename__ = "services"
@@ -47,6 +41,26 @@ class Services(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str] = mapped_column(String(100))
     description: Mapped[str] = mapped_column(String(1024))
+
+class Events(Base):
+    __tablename__ = "events"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    title: Mapped[str] = mapped_column(String(100))
+    description: Mapped[str] = mapped_column(String(1024))
+    date: Mapped[DateTime] = mapped_column(DateTime)
+    
+    participants_rel: Mapped[List['Participants']] = relationship(back_populates="event_rel")
+
+class Participants(Base):
+    __tablename__ = "participants"
+    
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    event: Mapped[int] = mapped_column(ForeignKey("events.id"))
+    
+    user_rel: Mapped['Users'] = relationship(back_populates="participants_rel")
+    event_rel: Mapped['Events'] = relationship(back_populates="participants_rel")
 
 class Briefing(Base):
     __tablename__ = "briefing"

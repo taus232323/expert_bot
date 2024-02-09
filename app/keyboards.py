@@ -1,6 +1,6 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton
-from app.database.requests import (get_contacts, get_briefing, get_services, get_cases, 
-                                   get_events, get_services)
+from app.database.requests import (get_contacts, get_services, get_cases, 
+                                   get_events, get_services, set_participant)
 from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
 
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
@@ -83,19 +83,19 @@ async def service_chosen_keyboard(service_id):
     InlineKeyboardButton(text='Удалить', callback_data=f'delete_service_{service_id}')],
     [InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
     return keyboard
-    
+     
 async def get_events_keyboard():
     events = await get_events()
     keyboard = InlineKeyboardBuilder()
     for event in events:
-        keyboard.add(InlineKeyboardButton(text=event.title, callback_data=f'events{event.id}'))
+        keyboard.add(InlineKeyboardButton(text=event.title, callback_data=f'events_{event.id}'))
     return keyboard.adjust(1).as_markup()
 
 async def admin_get_events_keyboard():
     events = await get_events()
     keyboard = InlineKeyboardBuilder()
     for event in events:
-        keyboard.add(InlineKeyboardButton(text=event.title, callback_data=f'events{event.id}'))
+        keyboard.add(InlineKeyboardButton(text=event.title, callback_data=f'events_{event.id}'))
     keyboard.add(InlineKeyboardButton(text='Добавить мероприятие', callback_data='add_event'),
                  InlineKeyboardButton(text='Отмена', callback_data='cancel_action'))
     return keyboard.adjust(1).as_markup()
@@ -104,22 +104,14 @@ async def event_chosen_keyboard(event_id):
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Изменить', callback_data=f'edit_event_{event_id}'),
     InlineKeyboardButton(text='Удалить', callback_data=f'delete_event_{event_id}')],
-    [InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
+    [InlineKeyboardButton(text='Отмена', callback_data='cancel_action'),
+     InlineKeyboardButton(text="Участники", callback_data=f'participants_{event_id}')]])
     return keyboard
 
+async def enroll_user_keyboard(event_id):
+    keyboard = InlineKeyboardBuilder()
+    keyboard.add(InlineKeyboardButton(text='Записаться', callback_data=f'enroll_user_{event_id}'))
+    keyboard.add(InlineKeyboardButton(text='Назад', callback_data='to_main'))
+    return keyboard.adjust(2).as_markup()
 
-
-
-
-
-
-
-
-
-async def get_briefing_keyboard():
-    briefing_kb = InlineKeyboardMarkup(row_width=2)
-    briefing_categories = await get_briefing()
-    for briefing in briefing_categories:
-        briefing_kb.add(InlineKeyboardButton(text=briefing.name, callback_data=f'briefing_{briefing.id}'))
-    return briefing_kb.adjust(2).as_markup()
 
