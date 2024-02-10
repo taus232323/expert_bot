@@ -17,6 +17,7 @@ class Users(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     tg_id = mapped_column(BigInteger)
+    username = mapped_column(String(50))
     
     participants_rel: Mapped[List['Participants']] = relationship(back_populates="user_rel")
     
@@ -56,7 +57,7 @@ class Participants(Base):
     __tablename__ = "participants"
     
     id: Mapped[int] = mapped_column(primary_key=True)
-    user: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    users: Mapped[int] = mapped_column(ForeignKey("users.id"))
     event: Mapped[int] = mapped_column(ForeignKey("events.id"))
     
     user_rel: Mapped['Users'] = relationship(back_populates="participants_rel")

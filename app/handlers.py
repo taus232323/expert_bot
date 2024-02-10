@@ -14,7 +14,7 @@ router = Router()
 
 async def cmd_start(message: Message):
     if isinstance(message, Message):
-        await set_user(message.from_user.id)
+        await set_user(message.from_user.id, message.from_user.username)
     if message.from_user.id in ADMIN_USER_IDS:
         await message.answer(f"Добро пожаловать, администратор {message.from_user.first_name}!"
                              "нажмите на /apanel для доступа к админ-панели", reply_markup=kb.user_main)
@@ -34,10 +34,12 @@ async def contact_selected(message: Message):
     contact_info = "\n".join([f"{contact.contact_type}: {contact.value}" for contact in contacts])
     if len(contact_info) < 2:
         await message.answer("Контактная информация отсутствует")
+        if message.from_user.id in ADMIN_USER_IDS:
+            await message.answer("Выберите желаемую опцию:", reply_markup=kb.new_contacts_kb)
     else:
         await message.answer(f"Моя контактная информация и график работы:\n{contact_info}")
-    if message.from_user.id in ADMIN_USER_IDS:
-        await message.answer("Выберите желаемую опцию:", reply_markup=kb.contacts_kb)
+        if message.from_user.id in ADMIN_USER_IDS:
+            await message.answer("Выберите желаемую опцию:", reply_markup=kb.contacts_kb)
    
     
 @router.message(F.text == "Кейсы")
@@ -46,11 +48,11 @@ async def cases_selected(message: Message):
     cases_list = "\n".join([f"{case.title}" for case in cases])
     if len(cases_list) < 2:
         await message.answer("Кейсы отсутствуют")
+    else:
+        await message.answer("Мои самые лучшие кейсы:", reply_markup=await kb.get_cases_keyboard())
     if message.from_user.id in ADMIN_USER_IDS:
         await message.answer("Выберите кейс для изменения/удаления или добавьте новый", 
                              reply_markup=await kb.admin_get_cases_keyboard())
-    else:
-        await message.answer("Мои самые лучшие кейсы:", reply_markup=await kb.get_cases_keyboard())
     
 @router.callback_query(F.data.startswith("cases_"))    
 async def case_detail_selected(callback: CallbackQuery):
@@ -67,11 +69,11 @@ async def service_selected(message: Message):
     services_list = "\n".join([f"{service.title}" for service in services])
     if len(services_list) < 2:
         await message.answer("Услуги отсутствуют")
+    else:
+        await message.answer("Мои самые выгодные услуги:", reply_markup=await kb.get_services_keyboard())
     if message.from_user.id in ADMIN_USER_IDS:
         await message.answer("Выберите услугу для изменения/удаления или добавьте новую",
                              reply_markup=await kb.admin_get_services_keyboard())
-    else:
-        await message.answer("Мои самые выгодные услуги:", reply_markup=await kb.get_services_keyboard())
         
 @router.callback_query(F.data.startswith("services_"))
 async def service_detail_selected(callback: CallbackQuery):
@@ -107,12 +109,19 @@ async def event_detail_selected(callback: CallbackQuery):
 
 @router.callback_query(F.data.startswith("enroll_"))
 async def enroll_user(callback: CallbackQuery):
-    await set_participant(tg_id=callback.from_user.id, event_id=callback.data.split("_")[2])
+    event = await get_event_by_id(callback.data.split("_")[2])
     await callback.message.delete()
-    await callback.answer("Вы успешно записаны!", cache_time=2)
-    await callback.message.answer("Я напомню Вам о моем мероприятии, чтобы Вы не пропустили самое интересное. "
-                                     "А пока что можете выбрать вариант из меню ниже", reply_markup=kb.user_main)
-    
+    if await set_participant(tg_id=callback.from_user.id, event_id=callback.data.split("_")[2]):
+        await callback.message.answer(f"Вы успешно записаны на: <b>{event.title}</b>.\n"
+                                    f"Дата и время события: <b>{event.date}</b>")
+        await callback.message.answer("Я напомню Вам заранее, чтобы Вы не пропустили самое интересное. "
+                                        "А пока что можете выбрать вариант из меню ниже", reply_markup=kb.user_main)
+    else:
+        await callback.message.answer(f"Вы уже записаны на: <b>{event.title}</b>.\n"
+                                    f"Дата и время события: <b>{event.date}</b>")
+        await callback.message.answer("Я напомню Вам заранее, чтобы Вы не пропустили самое интересное. "
+                                        "А пока что можете выбрать вариант из меню ниже", reply_markup=kb.user_main)
+        
 
 @router.message()
 async def echo(message: Message):

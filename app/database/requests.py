@@ -3,12 +3,12 @@ from sqlalchemy import select, delete, update
 from typing import List
 
 
-async def set_user(tg_id):
+async def set_user(tg_id, username):
     async with async_session() as session:
-        user = await session.scalar(select(Users).where(Users.tg_id == tg_id))
+        user = await session.scalar(select(Users).where(Users.tg_id == tg_id, Users.username == username))
         
         if not user:
-            session.add(Users(tg_id=tg_id))
+            session.add(Users(tg_id=tg_id, username=username))
             await session.commit()     
         
 async def get_users():
@@ -129,16 +129,22 @@ async def edit_event(data):
 async def set_participant(tg_id, event_id):
     async with async_session() as session:
         user = await session.scalar(select(Users).where(Users.tg_id == tg_id))
-        if user is None:
-            return "Пользователь не найден"
-        participant = Participants(user=user.id, event=event_id)
-        session.add(participant)
-        await session.commit()
+        existing_participant = await session.scalar(
+            select(Participants).where(Participants.users == user.id,
+                Participants.event == event_id))
+        if not existing_participant:
+            participant = Participants(users=user.id, event=event_id)
+            session.add(participant)
+            await session.commit()
+        else:
+            return None
         
 async def get_participants(event_id: int):
     async with async_session() as session:
-        participants = await session.scalars(select(Participants).where(Participants.event == event_id))
-        return participants
+        participants = await session.scalar(select(Participants).where(Participants.event == event_id))
+        if participants is not None:
+            users = await session.scalars(select(Users).where(Users.id == participants.users))
+            return users
 
         
 

@@ -22,6 +22,10 @@ contacts_kb = InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text='Удалить', callback_data='delete_contact'),
             InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
 
+new_contacts_kb = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='Добавить', callback_data='add_contact'),
+            InlineKeyboardButton(text='Отмена', callback_data='cancel_delete')]])
+
 confirm_delete_contacts = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Согласен', callback_data='confirmed_delete_contacts'),
             InlineKeyboardButton(text='Отмена', callback_data='cancel_delete')]])
@@ -98,7 +102,7 @@ async def admin_get_events_keyboard():
         keyboard.add(InlineKeyboardButton(text=event.title, callback_data=f'events_{event.id}'))
     keyboard.add(InlineKeyboardButton(text='Добавить мероприятие', callback_data='add_event'),
                  InlineKeyboardButton(text='Отмена', callback_data='cancel_action'))
-    return keyboard.adjust(1).as_markup()
+    return keyboard
 
 async def event_chosen_keyboard(event_id):
     keyboard = InlineKeyboardMarkup(inline_keyboard=[

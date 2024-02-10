@@ -321,10 +321,11 @@ async def check_participants(callback: CallbackQuery):
     participants = await get_participants(event_id)
     event = await get_event_by_id(event_id)
     if not participants:
-        await callback.message.answer("Участников нет")
+        await callback.message.edit_text("Участников нет")
     else:
         for participant in participants:
-            await callback.message.answer(f"Список участников <b>{event.title}:</b>\n\n{participant.tg_id}\n")
+            await callback.message.edit_text(f"Список участников\n<b>{event.title}:</b>"
+            f"\n\n@{participant.username if participant.username else participant.tg_id}\n")
 
 
 
