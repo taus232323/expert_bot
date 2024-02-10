@@ -67,9 +67,17 @@ class Briefing(Base):
     __tablename__ = "briefing"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    instructions: Mapped[str] = mapped_column(String(500))
-    question: Mapped[str] = mapped_column(String(500))
-    answer: Mapped[str] = mapped_column(String(100))
+    
+    question: Mapped[str] = mapped_column(String(1024))
+    answer: Mapped[str] = mapped_column(String(200))
+    
+class Other(Base):
+    __tablename__ = "other"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    instructions: Mapped[str] = mapped_column(String(1024))
+    welcome: Mapped[str] = mapped_column(String(1024))
+    welcome_img: Mapped[str] = mapped_column(String(200))
   
 
 async def async_main():

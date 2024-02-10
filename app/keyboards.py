@@ -24,7 +24,20 @@ contacts_kb = InlineKeyboardMarkup(inline_keyboard=[
 
 new_contacts_kb = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Добавить', callback_data='add_contact'),
-            InlineKeyboardButton(text='Отмена', callback_data='cancel_delete')]])
+            InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
+
+new_cases_kb = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='Добавить', callback_data='add_case'),
+            InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
+
+new_services_kb = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='Добавить', callback_data='add_service'),
+            InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
+
+new_events_kb = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='Добавить', callback_data='add_event'),
+            InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
+
 
 confirm_delete_contacts = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Согласен', callback_data='confirmed_delete_contacts'),
