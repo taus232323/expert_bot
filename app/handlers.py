@@ -5,13 +5,12 @@ from aiogram.filters import CommandStart
 from settings import ADMIN_USER_IDS
 import app.keyboards as kb
 from app.database.requests import (get_contacts, set_user, get_cases, get_case_by_id, get_services, get_service_by_id,
-                                   get_events, get_event_by_id, set_participant)
+                                   get_events, get_event_by_id, set_participant, check_participant)
 
 
 router = Router()
 
 @router.message(CommandStart())
-
 async def cmd_start(message: Message):
     if isinstance(message, Message):
         await set_user(message.from_user.id, message.from_user.username)
@@ -33,9 +32,10 @@ async def contact_selected(message: Message):
     contacts = await get_contacts()   
     contact_info = "\n".join([f"{contact.contact_type}: {contact.value}" for contact in contacts])
     if len(contact_info) < 2:
-        await message.answer("Контактная информация отсутствует")
         if message.from_user.id in ADMIN_USER_IDS:
-            await message.answer("Выберите желаемую опцию:", reply_markup=kb.new_contacts_kb)
+            await message.answer("Вы ещё не добавили ни одного контакта", reply_markup=kb.new_contacts_kb)
+        else:
+            await message.answer("Контактная информация отсутствует")
     else:
         await message.answer(f"Моя контактная информация и график работы:\n{contact_info}")
         if message.from_user.id in ADMIN_USER_IDS:
@@ -47,14 +47,16 @@ async def cases_selected(message: Message):
     cases = await get_cases()
     cases_list = "\n".join([f"{case.title}" for case in cases])
     if len(cases_list) < 2:
-        await message.answer("Кейсы отсутствуют")
         if message.from_user.id in ADMIN_USER_IDS:
-            await message.answer("Выберите желаемую опцию:", reply_markup=kb.new_cases_kb)
+            await message.answer("Вы ещё не добавили ни одного кейса", reply_markup=kb.new_cases_kb)
+        else:
+            await message.answer("Кейсы отсутствуют")
     else:
-        await message.answer("Мои самые лучшие кейсы:", reply_markup=await kb.get_cases_keyboard())
         if message.from_user.id in ADMIN_USER_IDS:
             await message.answer("Выберите кейс для изменения/удаления или добавьте новый", 
                              reply_markup=await kb.admin_get_cases_keyboard())
+        else:    
+            await message.answer("Мои самые лучшие кейсы:", reply_markup=await kb.get_cases_keyboard())
     
 @router.callback_query(F.data.startswith("cases_"))    
 async def case_detail_selected(callback: CallbackQuery):
@@ -70,9 +72,10 @@ async def service_selected(message: Message):
     services  = await get_services()
     services_list = "\n".join([f"{service.title}" for service in services])
     if len(services_list) < 2:
-        await message.answer("Услуги отсутствуют")
         if message.from_user.id in ADMIN_USER_IDS:
-            await message.answer("Выберите желаемую опцию:", reply_markup=kb.new_services_kb)
+            await message.answer("Вы ещё не добавили ни одной услуги", reply_markup=kb.new_services_kb)
+        else:
+            await message.answer("Услуги отсутствуют")
     else:
         if message.from_user.id in ADMIN_USER_IDS:
             await message.answer("Выберите услугу для изменения/удаления или добавьте новую",
@@ -94,14 +97,16 @@ async def event_selected(message: Message):
     events = await get_events()
     events_list = "\n".join([f"{event.title}" for event in events])
     if len(events_list) < 2:
-        await message.answer("Мероприятия отсутствуют")
         if message.from_user.id in ADMIN_USER_IDS:
-            await message.answer("Выберите желаемую опцию:", reply_markup=kb.new_events_kb)
+            await message.answer("Вы ещё не добавили ни одного мероприятия", reply_markup=kb.new_events_kb)
+        else:
+            await message.answer("Мероприятия отсутствуют")
     else:
-        await message.answer("Мои самые интересные мероприятия:", reply_markup=await kb.get_events_keyboard())
         if message.from_user.id in ADMIN_USER_IDS:
             await message.answer("Выберите мероприятие для изменения/удаления или добавьте новое",
                              reply_markup=await kb.admin_get_events_keyboard())
+        else:
+            await message.answer("Мои самые интересные мероприятия:", reply_markup=await kb.get_events_keyboard())
     
 
 @router.callback_query(F.data.startswith("events_"))
@@ -109,7 +114,6 @@ async def event_detail_selected(callback: CallbackQuery):
     event = await get_event_by_id(callback.data.split("_")[1])
     formatted_date = event.date.strftime('%Y-%m-%d %H:%M')
     event_for_send = f"<b>{event.title}</b>\n\n{event.description}\n\n<b>{formatted_date}</b>"
-    user = callback.from_user
     if callback.from_user.id in ADMIN_USER_IDS:
         await callback.message.edit_text(event_for_send, reply_markup=await kb.event_chosen_keyboard(event.id))
     else:
@@ -119,15 +123,17 @@ async def event_detail_selected(callback: CallbackQuery):
 async def enroll_user(callback: CallbackQuery):
     event = await get_event_by_id(callback.data.split("_")[2])
     await callback.message.delete()
-    success_message = f"Вы успешно записаны на: <b>{event.title}</b>.\nДата и время события: <b>{event.date}</b>"
-    is_in_event = f"Вы уже записаны на: <b>{event.title}</b>.\nДата и время события: <b>{event.date}</b>"
+    formatted_date = event.date.strftime('%Y-%m-%d %H:%M')
+    success_message = f"Вы успешно записаны на: \n<b>{event.title}</b>.\nДата и время события: \n<b>{formatted_date}</b>"
+    is_in_event = f"Вы уже записаны на: \n<b>{event.title}</b>.\nДата и время события: \n<b>{formatted_date}</b>"
     information = "Я напомню Вам заранее, чтобы Вы не пропустили самое интересное. "
     "А пока что можете выбрать вариант из меню ниже"
-    if await set_participant(tg_id=callback.from_user.id, event_id=callback.data.split("_")[2]):
-        await callback.message.answer(success_message)
+    if await check_participant(tg_id=callback.from_user.id, event_id=callback.data.split("_")[2]):
+        await callback.message.answer(is_in_event)
         await callback.message.answer(information, reply_markup=kb.user_main)
     else:
-        await callback.message.answer(is_in_event)
+        await set_participant(tg_id=callback.from_user.id, event_id=callback.data.split("_")[2])
+        await callback.message.answer(success_message)
         await callback.message.answer(information, reply_markup=kb.user_main)
         
 

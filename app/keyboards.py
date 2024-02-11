@@ -115,7 +115,7 @@ async def admin_get_events_keyboard():
         keyboard.add(InlineKeyboardButton(text=event.title, callback_data=f'events_{event.id}'))
     keyboard.add(InlineKeyboardButton(text='Добавить мероприятие', callback_data='add_event'),
                  InlineKeyboardButton(text='Отмена', callback_data='cancel_action'))
-    return keyboard
+    return keyboard.adjust(1).as_markup()
 
 async def event_chosen_keyboard(event_id):
     keyboard = InlineKeyboardMarkup(inline_keyboard=[

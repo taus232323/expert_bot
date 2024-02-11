@@ -57,7 +57,7 @@ class Participants(Base):
     __tablename__ = "participants"
     
     id: Mapped[int] = mapped_column(primary_key=True)
-    users: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    users: Mapped[list] = mapped_column(ForeignKey("users.id"))
     event: Mapped[int] = mapped_column(ForeignKey("events.id"))
     
     user_rel: Mapped['Users'] = relationship(back_populates="participants_rel")

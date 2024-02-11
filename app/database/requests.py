@@ -6,7 +6,6 @@ from typing import List
 async def set_user(tg_id, username):
     async with async_session() as session:
         user = await session.scalar(select(Users).where(Users.tg_id == tg_id, Users.username == username))
-        
         if not user:
             session.add(Users(tg_id=tg_id, username=username))
             await session.commit()     
@@ -129,15 +128,22 @@ async def edit_event(data):
 async def set_participant(tg_id, event_id):
     async with async_session() as session:
         user = await session.scalar(select(Users).where(Users.tg_id == tg_id))
-        existing_participant = await session.scalar(
-            select(Participants).where(Participants.users == user.id,
-                Participants.event == event_id))
-        if not existing_participant:
-            participant = Participants(users=user.id, event=event_id)
-            session.add(participant)
-            await session.commit()
+        participants = await session.execute(select(Participants).where(Participants.event == event_id))
+        if participants is None:
+            session.add(Participants(users=user.id, event=event_id))
         else:
-            return None
+            await session.execute(update(Participants).where(Participants.event == event_id).values(users=user.id))
+        await session.commit()
+        
+async def check_participant(event_id, tg_id):
+    async with async_session() as session:
+        user = await session.scalar(select(Users).where(Users.tg_id == tg_id))
+        participants = await session.scalar(select(Participants).where(Participants.event == event_id, Participants.users == user.id))
+        if participants:
+            return True
+        else:
+            return False
+        
         
 async def get_participants(event_id: int):
     async with async_session() as session:
