@@ -1,11 +1,12 @@
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 from aiogram.filters import CommandStart
+from datetime import datetime
 
 from settings import ADMIN_USER_IDS
 import app.keyboards as kb
 from app.database.requests import (get_contacts, set_user, get_cases, get_case_by_id, get_services, get_service_by_id,
-                                   get_events, get_event_by_id, set_participant, check_participant)
+                                   get_events, get_event_by_id, set_participant)
 
 
 router = Router()
@@ -111,7 +112,8 @@ async def event_selected(message: Message):
 
 @router.callback_query(F.data.startswith("events_"))
 async def event_detail_selected(callback: CallbackQuery):
-    event = await get_event_by_id(callback.data.split("_")[1])
+    event_id = callback.data.split("_")[1]
+    event = await get_event_by_id(event_id)
     formatted_date = event.date.strftime('%Y-%m-%d %H:%M')
     event_for_send = f"<b>{event.title}</b>\n\n{event.description}\n\n<b>{formatted_date}</b>"
     if callback.from_user.id in ADMIN_USER_IDS:
@@ -121,22 +123,25 @@ async def event_detail_selected(callback: CallbackQuery):
 
 @router.callback_query(F.data.startswith("enroll_"))
 async def enroll_user(callback: CallbackQuery):
-    event = await get_event_by_id(callback.data.split("_")[2])
-    await callback.message.delete()
+    event_id = callback.data.split("_")[2]
+    event = await get_event_by_id(event_id)
+    tg_id = callback.from_user.id
     formatted_date = event.date.strftime('%Y-%m-%d %H:%M')
-    success_message = f"Вы успешно записаны на: \n<b>{event.title}</b>.\nДата и время события: \n<b>{formatted_date}</b>"
-    is_in_event = f"Вы уже записаны на: \n<b>{event.title}</b>.\nДата и время события: \n<b>{formatted_date}</b>"
-    information = "Я напомню Вам заранее, чтобы Вы не пропустили самое интересное. "
-    "А пока что можете выбрать вариант из меню ниже"
-    if await check_participant(tg_id=callback.from_user.id, event_id=callback.data.split("_")[2]):
-        await callback.message.answer(is_in_event)
-        await callback.message.answer(information, reply_markup=kb.user_main)
+    event_details = f"\n<b>{event.title}</b>.\nДата и время события: \n<b>{formatted_date}</b>"
+    success_message = f"Вы успешно записаны на:{event_details}"
+    is_in_event = f"Вы уже записаны на:{event_details}"
+    participant_added = await set_participant(tg_id=tg_id, event_id=event_id)
+    if participant_added is True:
+        await callback.message.delete()
+        await callback.message.answer(success_message, reply_markup=kb.user_main)
     else:
-        await set_participant(tg_id=callback.from_user.id, event_id=callback.data.split("_")[2])
-        await callback.message.answer(success_message)
-        await callback.message.answer(information, reply_markup=kb.user_main)
-        
+        await callback.message.delete()
+        await callback.message.answer(is_in_event, reply_markup=kb.user_main)
 
+        
+        
+        
+        
 @router.message()
 async def echo(message: Message):
     await message.answer(f"Я не понимаю, что вы хотите")

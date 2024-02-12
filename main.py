@@ -1,12 +1,15 @@
 from aiogram import Bot, Dispatcher
 import asyncio
 import logging
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from app.database.models import async_main
 from app.handlers import router
 from app.admin import admin
 from settings import TOKEN
 
+
+scheduler = AsyncIOScheduler()
 
 async def main():
     await async_main()
@@ -15,6 +18,7 @@ async def main():
     dp = Dispatcher()
     dp.include_routers(admin, router)
     await dp.start_polling(bot)
+    scheduler.start()
 
 
 if __name__ == '__main__':

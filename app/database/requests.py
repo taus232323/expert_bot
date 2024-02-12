@@ -1,6 +1,7 @@
 from app.database.models import async_session, Users, Contacts, Events, Cases, Briefing, Services, Participants
 from sqlalchemy import select, delete, update
 from typing import List
+from datetime import datetime
 
 
 async def set_user(tg_id, username):
@@ -98,8 +99,12 @@ async def edit_service(data):
 
 async def get_events():
     async with async_session() as session:
+        actual_events = []
         events = await session.scalars(select(Events))
-        return events
+        for event in events:
+            if event.date > datetime.now():
+                actual_events.append(event)
+        return actual_events
     
 async def get_event_by_id(event_id: int):
     async with async_session() as session:
@@ -126,31 +131,34 @@ async def edit_event(data):
         await session.commit()
 
 async def set_participant(tg_id, event_id):
-    async with async_session() as session:
-        user = await session.scalar(select(Users).where(Users.tg_id == tg_id))
-        participants = await session.execute(select(Participants).where(Participants.event == event_id))
-        if participants is None:
-            session.add(Participants(users=user.id, event=event_id))
-        else:
-            await session.execute(update(Participants).where(Participants.event == event_id).values(users=user.id))
-        await session.commit()
-        
-async def check_participant(event_id, tg_id):
-    async with async_session() as session:
-        user = await session.scalar(select(Users).where(Users.tg_id == tg_id))
-        participants = await session.scalar(select(Participants).where(Participants.event == event_id, Participants.users == user.id))
-        if participants:
-            return True
-        else:
-            return False
-        
+    try:
+        async with async_session() as session:
+            user_id = await session.scalar(select(Users.id).where(Users.tg_id == tg_id))
+            if not user_id:
+                return None
+            participant = await session.scalar(select(Participants.id).where(
+                    Participants.user == user_id,
+                    Participants.event == event_id))
+            if not participant:
+                new_participant = Participants(user=user_id, event=event_id)
+                session.add(new_participant)
+                await session.commit()
+                return True
+            else:
+                return False
+    except Exception as e:
+        print(f"An error occured{e}")
+        return None    
         
 async def get_participants(event_id: int):
     async with async_session() as session:
-        participants = await session.scalar(select(Participants).where(Participants.event == event_id))
-        if participants is not None:
-            users = await session.scalars(select(Users).where(Users.id == participants.users))
-            return users
+        participants = await session.execute(select(Participants.user).where(Participants.event == event_id))
+        participant = [id for (id,) in participants]
+        if not participant:
+            return []
+        users_result = await session.execute(select(Users).where(Users.id.in_(participant)))
+        users = users_result.scalars().all()
+        return users
 
         
 

@@ -43,6 +43,9 @@ confirm_delete_contacts = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Согласен', callback_data='confirmed_delete_contacts'),
             InlineKeyboardButton(text='Отмена', callback_data='cancel_delete')]])
 
+participants_newsletter = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='Сделать рассылку', callback_data='newsletter')]])
+
 async def edit_contact_kb():
     contacts = await get_contacts()
     keyboard = InlineKeyboardBuilder()

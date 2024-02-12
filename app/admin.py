@@ -1,18 +1,22 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
-from aiogram.filters import CommandStart, Command, Filter
+from aiogram.filters import Command, Filter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+
 from settings import ADMIN_USER_IDS
 
 import app.keyboards as kb
 from app.database.requests import (get_users, set_contact, get_contacts, delete_contacts, 
                                    edit_contact, set_case, delete_case, edit_case, set_service,
                                    delete_service, edit_service, set_event, delete_event, edit_event,
-                                   get_participants, get_event_by_id)
+                                   get_participants, get_event_by_id, get_events)
 
 admin = Router()
+scheduler = AsyncIOScheduler()
+
 contact_type_hint = "Введите тип контактной информации. Например: Фамилия, Имя, Отчество; Телефон; Адрес офиса; График работы; Ссылка на сайт, или социальные сети (Вводить по одной ссылке)"
 admin_hint = f"Возможные команды:\n\n/newsletter - Сделать рассылку\n\n/add_contact - Добавить контактную информацию\n\n/add_case - Добавить Кейс\n\n/add_event - Добавить Мероприятие\n\n/add_service - Добавить Услугу\n\n/create_briefing - Создать брифинг"
      
@@ -20,7 +24,7 @@ class AdminProtect(Filter):
     async def __call__(self, message: Message):
         return message.from_user.id in ADMIN_USER_IDS
      
-                                         
+                                     
 class Newsletter(StatesGroup):
     message = State()
 
@@ -68,6 +72,7 @@ class EditEvent(StatesGroup):
     title = State()
     description = State()
     date = State()
+
 
 @admin.message(AdminProtect(), Command('apanel'))
 async def apanel(message: Message):
@@ -271,6 +276,9 @@ async def add_event_date(message: Message, state: FSMContext):
         await message.answer('Неверный формат даты и времени. Пожалуйста, введите дату и время события в формате ДД.ММ.ГГГГ ЧЧ:ММ')
         return
     else:
+        if date < datetime.now():
+            await message.answer('Дата события не может быть раньше текущей даты')
+            return
         await state.update_data(date=date)
         data = await state.get_data()
         await set_event(data)
@@ -309,6 +317,9 @@ async def edit_event_date(message: Message, state: FSMContext):
         await message.answer('Неверный формат даты и времени. Пожалуйста, введите дату и время события в формате ДД.ММ.ГГГГ ЧЧ:ММ')
         return
     else:
+        if date < datetime.now():
+            await message.answer('Дата события не может быть раньше текущей даты')
+            return
         await state.update_data(date=date)
         data = await state.get_data()
         await edit_event(data)
@@ -324,11 +335,47 @@ async def check_participants(callback: CallbackQuery):
         await callback.message.edit_text("Участников нет")
     else:
         for participant in participants:
-            await callback.message.edit_text(f"Список участников\n<b>{event.title}:</b>"
-            f"\n\n@{participant.username if participant.username else participant.tg_id}\n")
+            participant_text_list = []
+            for i, participant in enumerate(participants, 1):
+                username_or_id = participant.username if participant.username else participant.tg_id
+                participant_text_list.append(f"{i}. @{username_or_id}")
+            participant_text = "\n".join(participant_text_list)
+            message_text = (f"Список участников\n<b>{event.title}:</b>\n\n" + participant_text)
+            await callback.message.edit_text(message_text, reply_markup=kb.participants_newsletter)
+
+async def send_admin_reminder(message: Message):
+    events = await get_events()
+    for event in events:
+        participants = await get_participants(event.id)
+        for participant in participants:
+            participant_text_list = []
+            for i, participant in enumerate(participants, 1):
+                username_or_id = participant.username if participant.username else participant.tg_id
+                participant_text_list.append(f"{i}. @{username_or_id}")
+            participant_text = "\n".join(participant_text_list)
+            message_text = (f"Список участников\n<b>{event.title}:</b>\n\n" + participant_text)
+            await message.answer(message_text, reply_markup=kb.participants_newsletter)
 
 
 
+
+def schedule_reminders():
+    # Загрузите информацию о предстоящих событиях из вашей базы данных
+    upcoming_events = [...]  # Это должен быть список мероприятий с датами
+
+    # Для каждого события планируем напоминания
+    for event in upcoming_events:
+        event_time = event.date
+
+        # Планируем напоминание за 24 часа
+        if event_time - timedelta(days=1) > datetime.now():
+            scheduler.add_job(send_admin_reminder, 'date', 
+                              run_date=event_time - timedelta(days=1), 
+                              args=(event.id,))
+
+        # Планируем другие напоминания ...
+
+@admin.callback_query(AdminProtect(), F.data == "newsletter")
 @admin.message(AdminProtect(), Command('newsletter'))
 async def newsletter(message: Message, state: FSMContext):
     await state.set_state(Newsletter.message)
