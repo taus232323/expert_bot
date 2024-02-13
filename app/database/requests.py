@@ -1,4 +1,5 @@
-from app.database.models import async_session, Users, Contacts, Events, Cases, Briefing, Services, Participants
+from app.database.models import (async_session, Users, Contacts, Events, Cases, Briefing, 
+                                 Services, Participants, Instructions, Welcome)
 from sqlalchemy import select, delete, update
 from typing import List
 from datetime import datetime
@@ -160,6 +161,62 @@ async def get_participants(event_id: int):
         users = users_result.scalars().all()
         return users
 
-        
+async def get_briefing():
+    async with async_session() as session:
+        briefing = await session.scalars(select(Briefing))
+        return briefing
 
+async def add_question(data):
+    async with async_session() as session:
+        session.add(Briefing(**data))
+        await session.commit()
         
+async def get_question_by_id(question_id):
+    async with async_session() as session:
+        question = await session.scalar(select(Briefing).where(Briefing.id == question_id))
+        return question
+                
+async def edit_question(data):
+    async with async_session() as session:
+        await session.execute(
+            update(Briefing).where(Briefing.id == data["id"]).values({
+                Briefing.question: data['question'],
+                Briefing.answer: data['answer']}))
+        await session.commit()
+                
+async def get_instructions():
+    async with async_session() as session:
+        instructions = await session.scalar(select(Instructions))
+        return instructions
+    
+async def edit_instructions(data):
+    async with async_session() as session:
+        await session.execute(
+            update(Instructions).where(Instructions.id == 1).values({
+                Instructions.picture: data['picture'],
+                Instructions.description: data['instructions'],
+                Instructions.warning: data['warning']}))
+        await session.commit()
+        
+async def delete_instructions():
+    async with async_session() as session:
+        await session.execute(delete(Instructions))
+        await session.commit()
+
+async def get_welcome():
+    async with async_session() as session:
+        welcome = await session.scalar(select(Welcome))
+        return welcome
+        
+async def edit_welcome(data):
+    async with async_session() as session:
+        await session.execute(
+            update(Welcome).where(Welcome.id == 1).values({
+                Welcome.about: data['about'],
+                Welcome.picture: data['picture']}))
+        await session.commit()
+        
+async def delete_welcome():
+    async with async_session() as session:
+        await session.execute(delete(Welcome))
+        await session.commit()

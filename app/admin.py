@@ -1,12 +1,14 @@
 from datetime import datetime, timedelta
-from aiogram import Router, F
+from aiogram import Router, F, Bot
 from aiogram.types import Message, CallbackQuery
 from aiogram.filters import Command, Filter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.cron import CronTrigger
+from aiogram.exceptions import TelegramForbiddenError
 
-from settings import ADMIN_USER_IDS
+from settings import ADMIN_USER_IDS, TOKEN
 
 import app.keyboards as kb
 from app.database.requests import (get_users, set_contact, get_contacts, delete_contacts, 
@@ -73,6 +75,10 @@ class EditEvent(StatesGroup):
     description = State()
     date = State()
 
+class AddBriefing(StatesGroup):
+    question = State()
+    answer = State()
+
 
 @admin.message(AdminProtect(), Command('apanel'))
 async def apanel(message: Message):
@@ -81,18 +87,18 @@ async def apanel(message: Message):
 @admin.message(AdminProtect(), Command('add_contact'))
 async def add_contact(message: Message, state: FSMContext):
     await state.set_state(AddContact.contact_type)
-    await message.answer(contact_type_hint)
+    await message.answer(contact_type_hint, reply_markup=kb.cancel_action)
     
 @admin.callback_query(AdminProtect(), F.data =="add_contact")
 async def add_more_contact(callback: CallbackQuery, state: FSMContext):
     await state.set_state(AddContact.contact_type)
-    await callback.message.edit_text(contact_type_hint)
+    await callback.message.edit_text(contact_type_hint, reply_markup=kb.cancel_action)
 
 @admin.message(AdminProtect(), AddContact.contact_type)
 async def add_contact_type(message: Message, state: FSMContext):
     await state.update_data(contact_type=message.text)
     await state.set_state(AddContact.contact_value)
-    await message.answer('Введите контактную информацию')
+    await message.answer('Введите контактную информацию', reply_markup=kb.cancel_action)
 
 @admin.message(AdminProtect(), AddContact.contact_value)
 async def add_contact_value(message: Message, state: FSMContext):
@@ -115,13 +121,13 @@ async def edit_contacts(callback: CallbackQuery):
 async def edit_contact_selected(callback: CallbackQuery, state: FSMContext):
     await state.update_data(id=callback.data.split('_')[2])
     await state.set_state(EditContact.contact_type)
-    await callback.message.edit_text(contact_type_hint)
+    await callback.message.edit_text(contact_type_hint, reply_markup=kb.cancel_action)
    
 @admin.message(AdminProtect(), EditContact.contact_type)
 async def edit_contact_type(message: Message, state: FSMContext):
     await state.update_data(contact_type=message.text)
     await state.set_state(EditContact.contact_value)
-    await message.answer('Введите контактную информацию')
+    await message.answer('Введите контактную информацию', reply_markup=kb.cancel_action)
     
 @admin.message(AdminProtect(), EditContact.contact_value)
 async def edit_contact_value(message: Message, state: FSMContext):
@@ -148,18 +154,18 @@ async def confirm_delete_contact(callback: CallbackQuery):
 @admin.message(AdminProtect(), Command('add_case'))
 async def add_case(message: Message, state: FSMContext):
     await state.set_state(AddCase.title)
-    await message.answer('Введите название кейса')
+    await message.answer('Введите название кейса', reply_markup=kb.cancel_action)
     
 @admin.callback_query(AdminProtect(), F.data == "add_case")
 async def add_more_case(callback: CallbackQuery, state: FSMContext):
     await state.set_state(AddCase.title)
-    await callback.message.edit_text('Введите название кейса')
+    await callback.message.edit_text('Введите название кейса', reply_markup=kb.cancel_action)
     
 @admin.message(AdminProtect(), AddCase.title)
 async def add_case_title(message: Message, state: FSMContext):
     await state.update_data(title=message.text)
     await state.set_state(AddCase.description)
-    await message.answer('Введите описание кейса')
+    await message.answer('Введите описание кейса', reply_markup=kb.cancel_action)
 
 @admin.message(AdminProtect(), AddCase.description)
 async def add_case_description(message: Message, state: FSMContext):
@@ -179,13 +185,13 @@ async def delete_case_selected(callback: CallbackQuery):
 async def edit_case_selected(callback: CallbackQuery, state: FSMContext):
     await state.update_data(id=callback.data.split('_')[2])
     await state.set_state(EditCase.title)
-    await callback.message.edit_text('Введите название кейса')
+    await callback.message.edit_text('Введите название кейса', reply_markup=kb.cancel_action)
     
 @admin.message(AdminProtect(), EditCase.title)
 async def edit_case_title(message: Message, state: FSMContext):
     await state.update_data(title=message.text)
     await state.set_state(EditCase.description)
-    await message.answer('Введите описание кейса')
+    await message.answer('Введите описание кейса', reply_markup=kb.cancel_action)
 
 @admin.message(AdminProtect(), EditCase.description)
 async def edit_case_description(message: Message, state: FSMContext):
@@ -198,18 +204,18 @@ async def edit_case_description(message: Message, state: FSMContext):
 @admin.message(AdminProtect(), Command('add_service'))
 async def add_service(message: Message, state: FSMContext):
     await state.set_state(AddService.title)
-    await message.answer('Введите название услуги')
+    await message.answer('Введите название услуги', reply_markup=kb.cancel_action)
     
 @admin.callback_query(AdminProtect(), F.data == "add_service")
 async def add_more_service(callback: CallbackQuery, state: FSMContext):
     await state.set_state(AddService.title)
-    await callback.message.edit_text('Введите название услуги')
+    await callback.message.edit_text('Введите название услуги', reply_markup=kb.cancel_action)
 
 @admin.message(AdminProtect(), AddService.title)
 async def add_service_title(message: Message, state: FSMContext):
     await state.update_data(title=message.text)
     await state.set_state(AddService.description)
-    await message.answer('Введите описание услуги')
+    await message.answer('Введите описание услуги', reply_markup=kb.cancel_action)
     
 @admin.message(AdminProtect(), AddService.description)
 async def add_service_description(message: Message, state: FSMContext):
@@ -229,13 +235,13 @@ async def delete_service_selected(callback: CallbackQuery):
 async def edit_service_selected(callback: CallbackQuery, state: FSMContext):
     await state.update_data(id=callback.data.split('_')[2])
     await state.set_state(EditService.title)
-    await callback.message.edit_text('Введите название услуги')
+    await callback.message.edit_text('Введите название услуги', reply_markup=kb.cancel_action)
     
 @admin.message(AdminProtect(), EditService.title)
 async def edit_service_title(message: Message, state: FSMContext):
     await state.update_data(title=message.text)
     await state.set_state(EditService.description)
-    await message.answer('Введите описание услуги')
+    await message.answer('Введите описание услуги', reply_markup=kb.cancel_action)
     
 @admin.message(AdminProtect(), EditService.description)
 async def edit_service_description(message: Message, state: FSMContext):
@@ -245,28 +251,27 @@ async def edit_service_description(message: Message, state: FSMContext):
     await state.clear()
     await message.answer('Услуга успешно изменена', reply_markup=await kb.admin_get_services_keyboard())
 
-
 @admin.message(AdminProtect(), Command('add_event'))
 async def add_event(message: Message, state: FSMContext):
     await state.set_state(AddEvent.title)
-    await message.answer('Введите название события')
+    await message.answer('Введите название события', reply_markup=kb.cancel_action)
     
 @admin.callback_query(AdminProtect(), F.data == "add_event")
 async def add_more_event(callback: CallbackQuery, state: FSMContext):
     await state.set_state(AddEvent.title)
-    await callback.message.edit_text('Введите название события')
+    await callback.message.edit_text('Введите название события', reply_markup=kb.cancel_action)
     
 @admin.message(AdminProtect(), AddEvent.title)
 async def add_event_title(message: Message, state: FSMContext):
     await state.update_data(title=message.text)
     await state.set_state(AddEvent.description)
-    await message.answer('Введите описание события')
+    await message.answer('Введите описание события', reply_markup=kb.cancel_action)
     
 @admin.message(AdminProtect(), AddEvent.description)
 async def add_event_description(message: Message, state: FSMContext):
     await state.update_data(description=message.text)
     await state.set_state(AddEvent.date)
-    await message.answer('Введите дату события в формате ДД.ММ.ГГГГ ЧЧ:ММ')
+    await message.answer('Введите дату события в формате ДД.ММ.ГГГГ ЧЧ:ММ', reply_markup=kb.cancel_action)
     
 @admin.message(AdminProtect(), AddEvent.date)
 async def add_event_date(message: Message, state: FSMContext):
@@ -276,14 +281,15 @@ async def add_event_date(message: Message, state: FSMContext):
         await message.answer('Неверный формат даты и времени. Пожалуйста, введите дату и время события в формате ДД.ММ.ГГГГ ЧЧ:ММ')
         return
     else:
-        if date < datetime.now():
-            await message.answer('Дата события не может быть раньше текущей даты')
+        if date < datetime.now() + timedelta(days=1):
+            await message.answer('Дата события не может быть раньше текущей даты и меньше чем за 24 часа после')
             return
         await state.update_data(date=date)
         data = await state.get_data()
         await set_event(data)
         await state.clear()
         await message.answer('Событие успешно добавлено', reply_markup=await kb.admin_get_events_keyboard())
+        await schedule_reminders()
     
 @admin.callback_query(AdminProtect(), F.data.startswith("delete_event_"))
 async def delete_event_selected(callback: CallbackQuery):
@@ -295,19 +301,19 @@ async def delete_event_selected(callback: CallbackQuery):
 async def edit_event_selected(callback: CallbackQuery, state: FSMContext):
     await state.update_data(id=callback.data.split('_')[2])
     await state.set_state(EditEvent.title)
-    await callback.message.edit_text('Введите название события')
+    await callback.message.edit_text('Введите название события', reply_markup=kb.cancel_action)
     
 @admin.message(AdminProtect(), EditEvent.title)
 async def edit_event_title(message: Message, state: FSMContext):
     await state.update_data(title=message.text)
     await state.set_state(EditEvent.description)
-    await message.answer('Введите описание события')
+    await message.answer('Введите описание события', reply_markup=kb.cancel_action)
     
 @admin.message(AdminProtect(), EditEvent.description)
 async def edit_event_description(message: Message, state: FSMContext):
     await state.update_data(description=message.text)
     await state.set_state(EditEvent.date)
-    await message.answer('Введите дату события в формате ДД.ММ.ГГГГ ЧЧ:ММ')
+    await message.answer('Введите дату события в формате ДД.ММ.ГГГГ ЧЧ:ММ', reply_markup=kb.cancel_action)
     
 @admin.message(AdminProtect(), EditEvent.date)
 async def edit_event_date(message: Message, state: FSMContext):
@@ -317,14 +323,15 @@ async def edit_event_date(message: Message, state: FSMContext):
         await message.answer('Неверный формат даты и времени. Пожалуйста, введите дату и время события в формате ДД.ММ.ГГГГ ЧЧ:ММ')
         return
     else:
-        if date < datetime.now():
-            await message.answer('Дата события не может быть раньше текущей даты')
+        if date < datetime.now()  + timedelta(days=1):
+            await message.answer('Дата события не может быть раньше текущей даты и меньше чем за 24 часа после')
             return
         await state.update_data(date=date)
         data = await state.get_data()
         await edit_event(data)
         await state.clear()
         await message.answer('Событие успешно изменено', reply_markup=await kb.admin_get_events_keyboard())
+        await schedule_reminders()
 
 @admin.callback_query(AdminProtect(), F.data.startswith("participants_"))
 async def check_participants(callback: CallbackQuery):
@@ -334,52 +341,59 @@ async def check_participants(callback: CallbackQuery):
     if not participants:
         await callback.message.edit_text("Участников нет")
     else:
-        for participant in participants:
-            participant_text_list = []
-            for i, participant in enumerate(participants, 1):
-                username_or_id = participant.username if participant.username else participant.tg_id
-                participant_text_list.append(f"{i}. @{username_or_id}")
+        participant_text_list = []
+        for i, participant in enumerate(participants, 1):
+            username_or_id = participant.username if participant.username else participant.tg_id
+            participant_text_list.append(f"{i}. @{username_or_id}")
             participant_text = "\n".join(participant_text_list)
             message_text = (f"Список участников\n<b>{event.title}:</b>\n\n" + participant_text)
             await callback.message.edit_text(message_text, reply_markup=kb.participants_newsletter)
 
-async def send_admin_reminder(message: Message):
-    events = await get_events()
-    for event in events:
-        participants = await get_participants(event.id)
-        for participant in participants:
-            participant_text_list = []
-            for i, participant in enumerate(participants, 1):
-                username_or_id = participant.username if participant.username else participant.tg_id
-                participant_text_list.append(f"{i}. @{username_or_id}")
-            participant_text = "\n".join(participant_text_list)
-            message_text = (f"Список участников\n<b>{event.title}:</b>\n\n" + participant_text)
-            await message.answer(message_text, reply_markup=kb.participants_newsletter)
+async def send_admin_reminder(event_id):
+    bot = Bot(token=TOKEN, parse_mode='HTML')
+    event = await get_event_by_id(event_id)
+    participants = await get_participants(event_id)
+    participant_text_list = []
+    for i, participant in enumerate(participants, 1):
+        username_or_id = participant.username if participant.username else participant.tg_id
+        participant_text_list.append(f"{i}. @{username_or_id}")
+    participant_text = "\n".join(participant_text_list)
+    formatted_date = event.date.strftime('%Y-%m-%d %H:%M')
+    message_text = (f"Пользователи записавшиеся на\n<b>{event.title}</b>,"
+                    f"который состоится <b>{formatted_date}</b>:\n\n" + participant_text)
+    for admin in ADMIN_USER_IDS:
+        try:
+            await bot.send_message(chat_id=admin, text=message_text, reply_markup=kb.participants_newsletter)
+        except TelegramForbiddenError:
+            print(f"Не удалось отправить уведомление админу {admin}")
+    await bot.session.close()
 
-
-
-
-def schedule_reminders():
-    # Загрузите информацию о предстоящих событиях из вашей базы данных
-    upcoming_events = [...]  # Это должен быть список мероприятий с датами
-
-    # Для каждого события планируем напоминания
+async def schedule_reminders():
+    upcoming_events = await get_events()
     for event in upcoming_events:
         event_time = event.date
-
-        # Планируем напоминание за 24 часа
         if event_time - timedelta(days=1) > datetime.now():
             scheduler.add_job(send_admin_reminder, 'date', 
                               run_date=event_time - timedelta(days=1), 
                               args=(event.id,))
+        elif event_time - timedelta(hours=3) > datetime.now():
+            scheduler.add_job(send_admin_reminder, 'date',
+                              run_date=event_time - timedelta(hours=3),
+                              args=(event.id,))
+        elif event_time - timedelta(minutes=30) > datetime.now():
+            scheduler.add_job(send_admin_reminder, 'date',
+                              run_date=event_time - timedelta(minutes=30),
+                              args=(event.id,))
+        evening_reminder_trigger = CronTrigger(hour=19, minute=0)
+        scheduler.add_job(send_admin_reminder, evening_reminder_trigger, args=(event.id))
+    scheduler.start()
+        
 
-        # Планируем другие напоминания ...
-
-@admin.callback_query(AdminProtect(), F.data == "newsletter")
 @admin.message(AdminProtect(), Command('newsletter'))
+@admin.callback_query(AdminProtect(), F.data == "newsletter")
 async def newsletter(message: Message, state: FSMContext):
     await state.set_state(Newsletter.message)
-    await message.answer('Отправьте сообщение, которое вы хотите разослать всем пользователям')
+    await message.answer('Отправьте сообщение, которое вы хотите разослать всем пользователям', reply_markup=kb.cancel_action)
     
 
 @admin.message(AdminProtect(), Newsletter.message)
@@ -394,7 +408,8 @@ async def newsletter_message(message: Message, state: FSMContext):
     await state.clear()
 
 @admin.callback_query(AdminProtect(), F.data.startswith("cancel_"))
-async def cancel_operation(callback: CallbackQuery):
+async def cancel_operation(callback: CallbackQuery, state: FSMContext):
     await callback.message.delete_reply_markup()
+    await state.clear()
     await callback.answer("Операция отменена")
     await callback.message.answer(admin_hint)

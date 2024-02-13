@@ -20,6 +20,7 @@ class Users(Base):
     username = mapped_column(String(50))
     
     participants_rel: Mapped[List['Participants']] = relationship(back_populates="user_rel")
+    user_briefing_rel: Mapped[List['Briefing']] = relationship(back_populates="user_rel")
     
 class Contacts(Base):
     __tablename__ = "contacts"
@@ -67,17 +68,37 @@ class Briefing(Base):
     __tablename__ = "briefing"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    
     question: Mapped[str] = mapped_column(String(1024))
     answer: Mapped[str] = mapped_column(String(200))
     
-class Other(Base):
-    __tablename__ = "other"
+    user_briefing_rel: Mapped[List['UserBriefing']] = relationship(back_populates="question_rel")
+    
+class UserBriefing(Base):
+    __tablename__ = "user_briefing"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    instructions: Mapped[str] = mapped_column(String(1024))
-    welcome: Mapped[str] = mapped_column(String(1024))
-    welcome_img: Mapped[str] = mapped_column(String(200))
+    user: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    question: Mapped[int] = mapped_column(ForeignKey("briefing.id"))
+    answer: Mapped[str] = mapped_column(String(200))
+    
+    user_rel: Mapped['Users'] = relationship(back_populates="briefing_rel")
+    question_rel: Mapped['Briefing'] = relationship(back_populates="user_briefing_rel")
+    
+
+class Instructions(Base):
+    __tablename__ = "instruction"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    description: Mapped[str] = mapped_column(String(1024))
+    picture: Mapped[str] = mapped_column(String(200))
+    warning: Mapped[str] = mapped_column(String(200))
+    
+class Welcome(Base):
+    __tablename__ = "welcome"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    about: Mapped[str] = mapped_column(String(1024))
+    picture: Mapped[str] = mapped_column(String(200))
   
 
 async def async_main():

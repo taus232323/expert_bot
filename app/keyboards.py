@@ -1,9 +1,9 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton
 from app.database.requests import (get_contacts, get_services, get_cases, 
-                                   get_events, get_services, set_participant)
-from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
+                                   get_events, get_services)
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton, InlineKeyboardMarkup
 
 user_main = ReplyKeyboardMarkup(
     keyboard=[
@@ -38,13 +38,31 @@ new_events_kb = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Добавить', callback_data='add_event'),
             InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
 
+new_briefing_kb = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='Создать', callback_data='create_briefing'),
+            InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
 
+
+start_briefing_kb = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='Начать', callback_data='start_briefing'),
+            InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
+
+in_briefing_kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text='Продолжить', callback_data='next_question_'),
+        InlineKeyboardButton(text='Изменить', callback_data='edit_answer_')],
+            [InlineKeyboardButton(text='Начать заново', callback_data='start_briefing'),
+            InlineKeyboardButton(text='Закончить', callback_data='end_briefing')]])  
+    
 confirm_delete_contacts = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Согласен', callback_data='confirmed_delete_contacts'),
             InlineKeyboardButton(text='Отмена', callback_data='cancel_delete')]])
 
 participants_newsletter = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='Сделать рассылку', callback_data='newsletter')]])
+    [InlineKeyboardButton(text='Сделать рассылку', callback_data='newsletter'),
+     InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
+
+cancel_action = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
 
 async def edit_contact_kb():
     contacts = await get_contacts()

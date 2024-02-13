@@ -18,7 +18,7 @@ async def main():
     dp = Dispatcher()
     dp.include_routers(admin, router)
     await dp.start_polling(bot)
-    scheduler.start()
+    await scheduler.start()
 
 
 if __name__ == '__main__':

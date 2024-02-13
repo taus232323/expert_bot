@@ -1,12 +1,16 @@
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 from aiogram.filters import CommandStart
-from datetime import datetime
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import StatesGroup, State
 
 from settings import ADMIN_USER_IDS
 import app.keyboards as kb
 from app.database.requests import (get_contacts, set_user, get_cases, get_case_by_id, get_services, get_service_by_id,
-                                   get_events, get_event_by_id, set_participant)
+                                   get_events, get_event_by_id, set_participant, get_briefing)
+
+class Briefing(StatesGroup):
+    pass
 
 
 router = Router()
@@ -138,9 +142,30 @@ async def enroll_user(callback: CallbackQuery):
         await callback.message.delete()
         await callback.message.answer(is_in_event, reply_markup=kb.user_main)
 
+@router.message(F.text == "Брифинг")
+async def briefing_selected(message: Message):
+    briefing = await get_briefing()
+    questions_list = "\n".join([f"{question.id}" for question in briefing])
+    if len(questions_list) < 2:
+        if message.from_user.id in ADMIN_USER_IDS:
+            await message.answer("Вы ещё не добавили ни одного вопроса", reply_markup=kb.new_questions_kb)
+        else:
+            await message.answer("Брифинг отсутствует")       
+    else:
+        if message.from_user.id in ADMIN_USER_IDS:
+            await message.answer("Выберите вопрос для изменения или добавьте новый",
+                             reply_markup=await kb.admin_get_questions_keyboard())
+        else:
+            await message.answer("Инструкция:", reply_markup=await kb.start_briefing_kb())
         
-        
-        
+@router.callback_query(F.data == "start_briefing")
+async def start_briefing(callback: CallbackQuery):
+    briefing = await get_briefing()
+    
+    
+    
+    
+    
         
 @router.message()
 async def echo(message: Message):
