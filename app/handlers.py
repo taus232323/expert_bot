@@ -6,11 +6,13 @@ from aiogram.fsm.state import StatesGroup, State
 
 from settings import ADMIN_USER_IDS
 import app.keyboards as kb
-from app.database.requests import (get_contacts, set_user, get_cases, get_case_by_id, get_services, get_service_by_id,
-                                   get_events, get_event_by_id, set_participant, get_briefing)
+from app.database.requests import (get_welcome, get_contacts, set_user, get_cases, get_case_by_id, get_services, 
+                                   get_service_by_id, get_events, get_event_by_id, set_participant, get_briefing,
+                                   get_instructions, get_question_by_id, )
+
 
 class Briefing(StatesGroup):
-    pass
+    next_question = State()
 
 
 router = Router()
@@ -150,19 +152,25 @@ async def briefing_selected(message: Message):
         if message.from_user.id in ADMIN_USER_IDS:
             await message.answer("Вы ещё не добавили ни одного вопроса", reply_markup=kb.new_questions_kb)
         else:
-            await message.answer("Брифинг отсутствует")       
+            pass       
     else:
         if message.from_user.id in ADMIN_USER_IDS:
-            await message.answer("Выберите вопрос для изменения или добавьте новый",
-                             reply_markup=await kb.admin_get_questions_keyboard())
+            briefing_list = []
+            for i, snippet in enumerate(briefing, 1):
+                answer = snippet.answer if snippet.answer else "-|-|-|-|-|-|-|-|-|-|-"
+                briefing_list.append(f"{i}. {snippet.question}\n{answer}")
+                briefing_text = "\n".join(briefing_list)
+                await message.answer(f"Мой брифинг:\n\n{briefing_text}")
         else:
             await message.answer("Инструкция:", reply_markup=await kb.start_briefing_kb())
         
 @router.callback_query(F.data == "start_briefing")
-async def start_briefing(callback: CallbackQuery):
+async def start_briefing(callback: CallbackQuery, state: FSMContext):
+    instruction = await get_instructions()
     briefing = await get_briefing()
-    
-    
+    await callback.message.answer(f"{instruction.picture} {instruction.description}")
+    await callback.message.answer(f"{instruction.warning}", reply_markup=kb)
+    await state.set_state(Briefing)   
     
     
     

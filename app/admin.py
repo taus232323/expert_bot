@@ -346,7 +346,9 @@ async def check_participants(callback: CallbackQuery):
             username_or_id = participant.username if participant.username else participant.tg_id
             participant_text_list.append(f"{i}. @{username_or_id}")
             participant_text = "\n".join(participant_text_list)
-            message_text = (f"Список участников\n<b>{event.title}:</b>\n\n" + participant_text)
+            formatted_date = event.date.strftime('%Y-%m-%d %H:%M')
+            message_text = (f"Пользователи записавшиеся на\n<b>{event.title}</b>,"
+                    f"который состоится <b>{formatted_date}</b>:\n\n" + participant_text)
             await callback.message.edit_text(message_text, reply_markup=kb.participants_newsletter)
 
 async def send_admin_reminder(event_id):
