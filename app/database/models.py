@@ -20,7 +20,7 @@ class Users(Base):
     username = mapped_column(String(50))
     
     participants_rel: Mapped[List['Participants']] = relationship(back_populates="user_rel")
-    user_briefing_rel: Mapped[List['Briefing']] = relationship(back_populates="user_rel")
+    user_briefing_rel: Mapped[List['UserBriefing']] = relationship(back_populates="user_rel")
     
 class Contacts(Base):
     __tablename__ = "contacts"
@@ -81,7 +81,7 @@ class UserBriefing(Base):
     question: Mapped[int] = mapped_column(ForeignKey("briefing.id"))
     answer: Mapped[str] = mapped_column(String(200))
     
-    user_rel: Mapped['Users'] = relationship(back_populates="briefing_rel")
+    user_rel: Mapped['Users'] = relationship(back_populates="user_briefing_rel")
     question_rel: Mapped['Briefing'] = relationship(back_populates="user_briefing_rel")
     
 
@@ -90,8 +90,6 @@ class Instructions(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     description: Mapped[str] = mapped_column(String(1024))
-    picture: Mapped[str] = mapped_column(String(200))
-    warning: Mapped[str] = mapped_column(String(200))
     
 class Welcome(Base):
     __tablename__ = "welcome"

@@ -183,24 +183,37 @@ async def edit_question(data):
                 Briefing.question: data['question'],
                 Briefing.answer: data['answer']}))
         await session.commit()
+        
+async def delete_briefing():
+    async with async_session() as session:
+        await session.execute(delete(Briefing))
+        await session.commit()
                 
 async def get_instructions():
     async with async_session() as session:
         instructions = await session.scalar(select(Instructions))
         return instructions
     
+async def set_instructions(data):
+    async with async_session() as session:
+        session.add(Instructions(**data))
+        await session.commit()
+    
 async def edit_instructions(data):
     async with async_session() as session:
         await session.execute(
             update(Instructions).where(Instructions.id == 1).values({
-                Instructions.picture: data['picture'],
-                Instructions.description: data['instructions'],
-                Instructions.warning: data['warning']}))
+                Instructions.description: data['instructions']}))
         await session.commit()
         
 async def delete_instructions():
     async with async_session() as session:
         await session.execute(delete(Instructions))
+        await session.commit()
+
+async def set_welcome(data):
+    async with async_session() as session:
+        session.add(Welcome(**data))
         await session.commit()
 
 async def get_welcome():

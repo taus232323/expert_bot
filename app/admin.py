@@ -7,14 +7,19 @@ from aiogram.fsm.state import State, StatesGroup
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from aiogram.exceptions import TelegramForbiddenError
+import asyncio
+
 
 from settings import ADMIN_USER_IDS, TOKEN
 
 import app.keyboards as kb
-from app.database.requests import (get_users, set_contact, get_contacts, delete_contacts, 
-                                   edit_contact, set_case, delete_case, edit_case, set_service,
-                                   delete_service, edit_service, set_event, delete_event, edit_event,
-                                   get_participants, get_event_by_id, get_events)
+from app.database.requests import (
+get_users, set_contact, get_contacts, delete_contacts, edit_contact, set_case, delete_case, edit_case,
+set_service, delete_service, edit_service, set_event, delete_event, edit_event, get_participants, 
+get_event_by_id, get_events, set_instructions, edit_instructions, delete_instructions, get_briefing,
+get_question_by_id, add_question, edit_question, get_welcome, set_welcome, edit_welcome, delete_welcome, 
+get_instructions, delete_briefing
+)
 
 admin = Router()
 scheduler = AsyncIOScheduler()
@@ -74,11 +79,22 @@ class EditEvent(StatesGroup):
     title = State()
     description = State()
     date = State()
+    
+
+class AddInstruction(StatesGroup):
+    description = State()
+
 
 class AddBriefing(StatesGroup):
     question = State()
     answer = State()
 
+
+class EditBriefing(StatesGroup):
+    id = State()
+    question = State()
+    answer = State()
+    
 
 @admin.message(AdminProtect(), Command('apanel'))
 async def apanel(message: Message):
@@ -389,7 +405,54 @@ async def schedule_reminders():
         evening_reminder_trigger = CronTrigger(hour=19, minute=0)
         scheduler.add_job(send_admin_reminder, evening_reminder_trigger, args=(event.id))
     scheduler.start()
-        
+
+@admin.callback_query(AdminProtect(), F.data == "add_instruction")
+async def add_instruction(callback: CallbackQuery, state: FSMContext):
+    await state.set_state(AddInstruction.description)
+    await callback.message.edit_text('Введите описание инструкции', reply_markup=kb.cancel_action)
+
+@admin.message(AdminProtect(), AddInstruction.description)
+async def save_instruction(message: Message, state: FSMContext):
+    await delete_instructions()
+    await state.update_data(description=message.text)
+    data = await state.get_data()
+    await set_instructions(data)
+    await state.clear()
+    await message.answer("Инструкция сохранена. Теперь можно приступить к созданию брифнга", 
+                         reply_markup=kb.in_create_briefing_kb) 
+
+
+@admin.callback_query(AdminProtect(), F.data == "create_briefing")
+async def create_briefing(callback: CallbackQuery, state: FSMContext):
+    await callback.message.edit_text('Сейчас Вы будете создавать брифинг следуйте моим инструкциям и у Вас всё получится')
+    await state.set_state(AddBriefing.question)
+    await callback.message.answer('Введите текст вопроса', reply_markup=kb.cancel_action)
+
+@admin.message(AdminProtect(), AddBriefing.question)
+async def add_briefing_question(message: Message, state: FSMContext):
+    await state.update_data(question=message.text)
+    await state.set_state(AddBriefing.answer)
+    await message.answer('Введите варианты ответов через знак точки с запятой ";", либо знак минус '
+                         '"-" если хотите, чтобы ответ был в свободной форме', reply_markup=kb.cancel_action)
+    
+@admin.message(AdminProtect(), AddBriefing.answer)    
+async def add_briefing_answer(message: Message, state: FSMContext):
+    await state.update_data(answer=message.text)
+    data = await state.get_data()
+    await add_question(data)
+    await state.clear()
+    await message.answer("Вопрос добавлен. Хотите посмотреть что получилось или добавить ещё один?",
+                         reply_markup=kb.in_create_briefing_kb)
+
+@admin.callback_query(AdminProtect(), F.data == "add_question")
+async def add_question_to_briefing(callback: CallbackQuery, state: FSMContext):
+    await callback.message.edit_text('Давайте добавим ещё один вопрос')
+    await asyncio.sleep(1)
+    await state.set_state(AddBriefing.question)
+    await callback.message.edit_text('Введите текст вопроса', reply_markup=kb.cancel_action)
+
+
+
 
 @admin.message(AdminProtect(), Command('newsletter'))
 @admin.callback_query(AdminProtect(), F.data == "newsletter")

@@ -144,32 +144,43 @@ async def enroll_user(callback: CallbackQuery):
         await callback.message.delete()
         await callback.message.answer(is_in_event, reply_markup=kb.user_main)
 
-@router.message(F.text == "Брифинг")
+@router.callback_query(F.data == "briefing")
+@router.message(F.text == "Пройти опрос")
 async def briefing_selected(message: Message):
+    await message.answer("start briefing")
     briefing = await get_briefing()
+    instructions = await get_instructions()
     questions_list = "\n".join([f"{question.id}" for question in briefing])
-    if len(questions_list) < 2:
+    print("above cycles")
+    if len(questions_list) < 1:
         if message.from_user.id in ADMIN_USER_IDS:
-            await message.answer("Вы ещё не добавили ни одного вопроса", reply_markup=kb.new_questions_kb)
+            await message.answer("Вы ещё не создали брифинг. Можем это сделать прямо сейчас", reply_markup=kb.create_briefing_kb)
         else:
-            pass       
+            await message.answer("Брифинг отсутствует", reply_markup=kb.user_main)
     else:
         if message.from_user.id in ADMIN_USER_IDS:
             briefing_list = []
+            instr = []
+            print("briefing_list")
             for i, snippet in enumerate(briefing, 1):
-                answer = snippet.answer if snippet.answer else "-|-|-|-|-|-|-|-|-|-|-"
-                briefing_list.append(f"{i}. {snippet.question}\n{answer}")
+                print("snippets")
+                instr = "\n".join([f"{instruction.description}" for instruction in instructions])
+                print("instr")
+                answer = snippet.answer if len(snippet.answer) < 2 else "Ответ в свободной форме"
+                briefing_list.append(f"{i}. {snippet.question}\n{answer}\n")
                 briefing_text = "\n".join(briefing_list)
-                await message.answer(f"Мой брифинг:\n\n{briefing_text}")
+            await message.answer(f"<b>Инструкции:</b>\n{instr}\n<b>Весь брифинг:</b>:\n\n{briefing_text}",
+                                     reply_markup=kb.edit_briefing_kb)
         else:
-            await message.answer("Инструкция:", reply_markup=await kb.start_briefing_kb())
+            if instructions is None:
+                await message.answer(text="Этот брифинг создан, чтобы упростить наше будущее сотрудничество" 
+                                     "и не займет много Вашего времени", reply_markup=kb.start_briefing_kb)
+            else:
+                await message.answer(text=instructions.description, reply_markup=await kb.start_briefing_kb())
         
 @router.callback_query(F.data == "start_briefing")
 async def start_briefing(callback: CallbackQuery, state: FSMContext):
-    instruction = await get_instructions()
     briefing = await get_briefing()
-    await callback.message.answer(f"{instruction.picture} {instruction.description}")
-    await callback.message.answer(f"{instruction.warning}", reply_markup=kb)
     await state.set_state(Briefing)   
     
     

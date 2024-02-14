@@ -38,16 +38,25 @@ new_events_kb = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Добавить', callback_data='add_event'),
             InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
 
-new_briefing_kb = InlineKeyboardMarkup(inline_keyboard=[
+create_briefing_kb = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Создать', callback_data='create_briefing'),
-            InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
+            InlineKeyboardButton(text='Отмена', callback_data='cancel_action')],
+    [InlineKeyboardButton(text='Добавить инструкцию', callback_data='add_instruction')]])
 
+in_create_briefing_kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text='Добавить', callback_data='add_question'),
+        InlineKeyboardButton(text='Посмотреть', callback_data='briefing')],
+            [InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
+
+edit_briefing_kb = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='Изменить', callback_data='edit_briefing'),
+            InlineKeyboardButton(text='Удалить', callback_data='delete_briefing')],
+    [InlineKeyboardButton(text='Добавить инструкцию', callback_data='add_instruction')],
+    [InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
 
 start_briefing_kb = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Начать', callback_data='start_briefing'),
             InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
-
-
 
 in_briefing_kb = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text='Продолжить', callback_data='next_question_'),
