@@ -84,7 +84,10 @@ class EditEvent(StatesGroup):
 class AddInstruction(StatesGroup):
     description = State()
 
-
+class EditInstruction(StatesGroup):
+    id = State()
+    description = State()
+    
 class AddBriefing(StatesGroup):
     question = State()
     answer = State()
@@ -307,11 +310,18 @@ async def add_event_date(message: Message, state: FSMContext):
         await message.answer('Событие успешно добавлено', reply_markup=await kb.admin_get_events_keyboard())
         await schedule_reminders()
     
+@admin.callback_query(AdminProtect(), F.data.startswith("predelete_event_"))
+async def predelete_event_selected(callback: CallbackQuery):
+    event_id = callback.data.split('_')[2]
+    warning = "Это действие удалит мероприятие вместе со списком участников, но Вы можете просто изменить его"
+    await callback.answer(warning, reply_markup=kb.confirm_delete_event_keyboard())
+    
 @admin.callback_query(AdminProtect(), F.data.startswith("delete_event_"))
 async def delete_event_selected(callback: CallbackQuery):
-    await delete_event(callback.data.split('_')[2])
-    await callback.answer("Событие успешно удалено")
-    await callback.message.edit_text("Мои самые интересные события", reply_markup=await kb.admin_get_events_keyboard())
+    event_id = callback.data.split('_')[2]
+    await delete_event(event_id)
+    await callback.answer("Мероприятие успешно удалено")
+    await callback.message.edit_text("Мои самые интересные мероприятия", reply_markup=await kb.admin_get_events_keyboard())    
     
 @admin.callback_query(AdminProtect(), F.data.startswith("edit_event_"))
 async def edit_event_selected(callback: CallbackQuery, state: FSMContext):
@@ -406,10 +416,21 @@ async def schedule_reminders():
         scheduler.add_job(send_admin_reminder, evening_reminder_trigger, args=(event.id))
     scheduler.start()
 
+@admin.callback_query(AdminProtect(), F.data == "instruction")
+async def instruction(callback: CallbackQuery):
+    instructions = await get_instructions()
+    default_instruction = f"<b>Вы не добавили инструкцию. По умолчанию она такая:</b>\n Этот брифинг создан, чтобы упростить наше будущее сотрудничество и не займет много Вашего времени"
+    if instructions:
+        instr_text = f"{instructions.description if instructions else None}"
+        await callback.message.edit_text(instr_text, reply_markup=kb.edit_instruction_kb)
+    else:
+        instr_text = default_instruction        
+        await callback.message.edit_text(instr_text, reply_markup=kb.new_instruction_kb)
+
 @admin.callback_query(AdminProtect(), F.data == "add_instruction")
 async def add_instruction(callback: CallbackQuery, state: FSMContext):
     await state.set_state(AddInstruction.description)
-    await callback.message.edit_text('Введите описание инструкции', reply_markup=kb.cancel_action)
+    await callback.message.edit_text('Введите свою инструкцию по прохождения брифинга', reply_markup=kb.cancel_action)
 
 @admin.message(AdminProtect(), AddInstruction.description)
 async def save_instruction(message: Message, state: FSMContext):
@@ -421,6 +442,15 @@ async def save_instruction(message: Message, state: FSMContext):
     await message.answer("Инструкция сохранена. Теперь можно приступить к созданию брифнга", 
                          reply_markup=kb.in_create_briefing_kb) 
 
+@admin.callback_query(AdminProtect(), F.data == "edit_instruction")
+async def edit_instruction(callback: CallbackQuery, state: FSMContext):
+    await state.set_state(AddInstruction.description)
+    await callback.message.edit_text('Введите новую инструкцию по прохождения брифинга', reply_markup=kb.cancel_action)
+    
+@admin.callback_query(AdminProtect(), F.data == "delete_instruction")
+async def delete_instruction(callback: CallbackQuery):
+    await delete_instructions()
+    await callback.message.edit_text('Инструкция удалена', reply_markup=kb.admin_get_briefing_kb)
 
 @admin.callback_query(AdminProtect(), F.data == "create_briefing")
 async def create_briefing(callback: CallbackQuery, state: FSMContext):
@@ -451,8 +481,48 @@ async def add_question_to_briefing(callback: CallbackQuery, state: FSMContext):
     await state.set_state(AddBriefing.question)
     await callback.message.edit_text('Введите текст вопроса', reply_markup=kb.cancel_action)
 
+@admin.callback_query(AdminProtect(), F.data == "edit_briefing")
+async def edit_briefing(callback: CallbackQuery):
+    await callback.message.delete_reply_markup()
+    await callback.message.answer('Хотите добавить новый вопрос, изменить существующий или удалить брифинг целиком?', 
+                                     reply_markup=kb.edit_briefing_kb)
 
+@admin.callback_query(AdminProtect(), F.data == "predelete_briefing")
+async def predelete_briefing(callback: CallbackQuery):
+    warning = 'Эта операция удалит весь брифинг вместе с ответами пользователей, '
+    'но вы можете изменить вопросы по отдельности'
+    await callback.message.edit_text(warning, reply_markup=kb.confirm_delete_briefing_kb)
+    
+@admin.callback_query(AdminProtect(), F.data == "delete_briefing")
+async def delete_briefing(callback: CallbackQuery):
+    await delete_briefing()
+    await callback.message.edit_text('Брифинг удалён', reply_markup=kb.in_create_briefing_kb)
 
+@admin.callback_query(AdminProtect(), F.data == "edit_question")
+async def edit_question_id(callback: CallbackQuery, state: FSMContext):
+    await state.set_state(EditBriefing.id)
+    await callback.message.edit_text('Введите номер вопроса, который Вы желаете изменить', reply_markup=kb.cancel_action)
+    
+@admin.message(AdminProtect(), EditBriefing.id)
+async def edit_question(message: Message, state: FSMContext):
+    await state.update_data(id=message.text)
+    await state.set_state(EditBriefing.question)
+    await message.answer('Введите новый вопрос', reply_markup=kb.cancel_action)
+    
+@admin.message(AdminProtect(), EditBriefing.question)
+async def edit_question_text(message: Message, state: FSMContext):
+    await state.update_data(question=message.text)
+    await state.set_state(EditBriefing.answer)
+    await message.answer('Введите новый ответ', reply_markup=kb.cancel_action)
+    
+@admin.message(AdminProtect(), EditBriefing.answer)
+async def edit_question_answer(message: Message, state: FSMContext):
+    await state.update_data(answer=message.text)
+    data = await state.get_data()
+    await edit_question(data)
+    await state.clear()
+    await message.answer('Вопрос изменён. Хотите посмотреть что получилось или добавить ещё один?', 
+                         reply_markup=kb.in_create_briefing_kb)
 
 @admin.message(AdminProtect(), Command('newsletter'))
 @admin.callback_query(AdminProtect(), F.data == "newsletter")

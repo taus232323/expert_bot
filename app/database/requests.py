@@ -1,5 +1,5 @@
 from app.database.models import (async_session, Users, Contacts, Events, Cases, Briefing, 
-                                 Services, Participants, Instructions, Welcome)
+                                 Services, Participants, Instructions, Welcome, UserBriefing)
 from sqlalchemy import select, delete, update
 from typing import List
 from datetime import datetime
@@ -232,4 +232,9 @@ async def edit_welcome(data):
 async def delete_welcome():
     async with async_session() as session:
         await session.execute(delete(Welcome))
+        await session.commit()
+
+async def add_response(data):
+    async with async_session() as session:
+        await session.add(UserBriefing(**data))
         await session.commit()

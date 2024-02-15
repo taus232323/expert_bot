@@ -59,7 +59,7 @@ class Participants(Base):
     
     id: Mapped[int] = mapped_column(primary_key=True)
     user: Mapped[int] = mapped_column(ForeignKey("users.id"))
-    event: Mapped[int] = mapped_column(ForeignKey("events.id"))
+    event: Mapped[int] = mapped_column(ForeignKey("events.id", ondelete="CASCADE"))
     
     user_rel: Mapped['Users'] = relationship(back_populates="participants_rel")
     event_rel: Mapped['Events'] = relationship(back_populates="participants_rel")
@@ -78,7 +78,7 @@ class UserBriefing(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user: Mapped[int] = mapped_column(ForeignKey("users.id"))
-    question: Mapped[int] = mapped_column(ForeignKey("briefing.id"))
+    question: Mapped[int] = mapped_column(ForeignKey("briefing.id", ondelete="CASCADE"))
     answer: Mapped[str] = mapped_column(String(200))
     
     user_rel: Mapped['Users'] = relationship(back_populates="user_briefing_rel")

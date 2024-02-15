@@ -3,16 +3,17 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
 from settings import ADMIN_USER_IDS
 import app.keyboards as kb
 from app.database.requests import (get_welcome, get_contacts, set_user, get_cases, get_case_by_id, get_services, 
                                    get_service_by_id, get_events, get_event_by_id, set_participant, get_briefing,
-                                   get_instructions, get_question_by_id, )
+                                   get_instructions, get_question_by_id, add_response)
 
 
-class Briefing(StatesGroup):
-    next_question = State()
+class BriefingStates(StatesGroup):
+    waiting_for_answer = State()
 
 
 router = Router()
@@ -48,7 +49,6 @@ async def contact_selected(message: Message):
         if message.from_user.id in ADMIN_USER_IDS:
             await message.answer("Выберите желаемую опцию:", reply_markup=kb.contacts_kb)
    
-    
 @router.message(F.text == "Кейсы")
 async def cases_selected(message: Message):
     cases = await get_cases()
@@ -115,7 +115,6 @@ async def event_selected(message: Message):
         else:
             await message.answer("Мои самые интересные мероприятия:", reply_markup=await kb.get_events_keyboard())
     
-
 @router.callback_query(F.data.startswith("events_"))
 async def event_detail_selected(callback: CallbackQuery):
     event_id = callback.data.split("_")[1]
@@ -144,46 +143,131 @@ async def enroll_user(callback: CallbackQuery):
         await callback.message.delete()
         await callback.message.answer(is_in_event, reply_markup=kb.user_main)
 
+async def show_instruction(message: Message):
+    instructions = await get_instructions()
+    default_instruction = f"<b>Вы не добавили инструкцию. По умолчанию она такая:</b>\n Этот брифинг создан, чтобы упростить наше будущее сотрудничество и не займет много Вашего времени"
+    if message.from_user.id in ADMIN_USER_IDS:
+        if instructions:
+            instr_text = f"{instructions.description if instructions else None}"
+        else:
+            instr_text = default_instruction        
+        return instr_text
+    else:
+        if instructions:
+            await message.answer(text=instructions.description, reply_markup=await kb.start_briefing_kb())
+        else:
+            await message.answer(text=default_instruction, reply_markup=kb.start_briefing_kb)
+
 @router.callback_query(F.data == "briefing")
 @router.message(F.text == "Пройти опрос")
 async def briefing_selected(message: Message):
-    await message.answer("start briefing")
     briefing = await get_briefing()
-    instructions = await get_instructions()
-    questions_list = "\n".join([f"{question.id}" for question in briefing])
-    print("above cycles")
-    if len(questions_list) < 1:
+    briefing_list = []
+    for brief in briefing:
+        answer = brief.answer if len(brief.answer) > 2 else "*Ответ в свободной форме*"
+        briefing_list.append(f"{brief.id} {brief.question}\n{answer}")
+    briefing_text = "\n".join(briefing_list)
+    if briefing_text:
         if message.from_user.id in ADMIN_USER_IDS:
-            await message.answer("Вы ещё не создали брифинг. Можем это сделать прямо сейчас", reply_markup=kb.create_briefing_kb)
+            instructions = await show_instruction(message)
+            await message.answer(f"<b>Инструкции:</b>\n{instructions}\n<b>Весь брифинг:</b>\n\n{briefing_text}",
+                                     reply_markup=kb.admin_get_briefing_kb)
         else:
-            await message.answer("Брифинг отсутствует", reply_markup=kb.user_main)
+            await show_instruction(message)
     else:
         if message.from_user.id in ADMIN_USER_IDS:
-            briefing_list = []
-            instr = []
-            print("briefing_list")
-            for i, snippet in enumerate(briefing, 1):
-                print("snippets")
-                instr = "\n".join([f"{instruction.description}" for instruction in instructions])
-                print("instr")
-                answer = snippet.answer if len(snippet.answer) < 2 else "Ответ в свободной форме"
-                briefing_list.append(f"{i}. {snippet.question}\n{answer}\n")
-                briefing_text = "\n".join(briefing_list)
-            await message.answer(f"<b>Инструкции:</b>\n{instr}\n<b>Весь брифинг:</b>:\n\n{briefing_text}",
-                                     reply_markup=kb.edit_briefing_kb)
+            await message.answer("Вы ещё не создали брифинг. Можем это сделать прямо сейчас", 
+                                 reply_markup=kb.create_briefing_kb)
         else:
-            if instructions is None:
-                await message.answer(text="Этот брифинг создан, чтобы упростить наше будущее сотрудничество" 
-                                     "и не займет много Вашего времени", reply_markup=kb.start_briefing_kb)
-            else:
-                await message.answer(text=instructions.description, reply_markup=await kb.start_briefing_kb())
-        
+            await message.answer("Брифинг отсутствует", reply_markup=kb.user_main)
+
 @router.callback_query(F.data == "start_briefing")
 async def start_briefing(callback: CallbackQuery, state: FSMContext):
+    async with state.proxy() as data:
+        data['current_question_index'] = 0
+        data['responses'] = []
+    await send_next_question(callback, state)
+
+async def send_next_question(callback: CallbackQuery, state: FSMContext):
+    async with state.proxy() as data:
+        briefing = await get_briefing()
+        briefing_questions = briefing.scalars().all()
+        current_index = data['current_question_index']
+        
+        if current_index < len(briefing_questions):
+            question = briefing_questions[current_index]
+            markup = kb.generate_markup(question.answer)
+            
+            await callback.message.answer(question.question, reply_markup=markup)
+            await BriefingStates.waiting_for_answer.set()
+        else:
+            await state.clear()
+            await callback.message.answer("Брифинг завершен, спасибо за ваши ответы!", 
+                                          reply_markup=kb.generate_end_markup())
+        
+@router.message_handler(state=BriefingStates.waiting_for_answer)
+async def briefing_answer_received(message: Message, state: FSMContext):
+    async with state.proxy() as data:
+        current_index = data['current_question_index']
+        
+        # Записываем ответ пользователя
+        data['responses'].append(message.text)
+        # Отсылаем подтверждение и клавиатуру для действий
+        markup = ReplyKeyboardMarkup(resize_keyboard=True).row(
+            KeyboardButton('Продолжить'), KeyboardButton('Изменить')
+        )
+        await message.answer(f"Ваш ответ: {message.text}", reply_markup=markup)
+        # Устанавливаем следующее состояние ожидания действия пользователя
+        await BriefingStates.next()
+
+@router.callback_query(F.data =='restart_briefing')
+async def restart_briefing(callback: CallbackQuery, state: FSMContext):
+    await state.clear()
+    await start_briefing(callback, state)
+    
+@router.message_handler(F.text =='Продолжить', BriefingStates.waiting_for_answer)
+async def continue_briefing(message: Message, state: FSMContext):
+    async with state.proxy() as data:
+        data['current_question_index'] += 1
+    await send_next_question(message, state)
+    await state.reset_state(with_data=False) 
+
+# Обработчик для команды "Изменить"
+@router.message_handler(F.text=='Изменить', state=BriefingStates.waiting_for_answer)
+async def change_answer(message: Message, state: FSMContext):
+    # Поскольку мы уже сохраняем ответы в списке `responses`, пользователь может изменить последний ответ:
+    async with state.proxy() as data:
+        data['responses'] = data['responses'][:-1]  # Удаляем последний ответ
+        current_index = data['current_question_index']
+        # Повторно отправляем текущий вопрос
+        await send_current_question(message, current_index, state)
+   
+# Функция для отправки текущего вопроса
+async def send_current_question(callback: CallbackQuery, current_index: int, state: FSMContext):
     briefing = await get_briefing()
-    await state.set_state(Briefing)   
+    briefing_questions = briefing.scalars().all()
+    question = briefing_questions[current_index]
+    markup = kb.generate_markup(question.answer)
+    await callback.message.answer(question.question, reply_markup=markup)
+    await BriefingStates.waiting_for_answer.set()
+
+# Обработчик для команды "Сначала"
+@router.message_handler(F.text =='Сначала', state='*')
+async def restart_briefing_command(message: Message, state: FSMContext):
+    await state.clear()  # Сбрасываем состояние и начинаем заново
+    await start_briefing(message)
+
+# Обработчик для команды "Завершить"
+@router.message_handler(F.text =='Завершить', state='*')
+async def finish_briefing_command(message: Message, state: FSMContext):
+    async with state.proxy() as data:
+        # Перед завершением можете что-то сделать с сохранёнными ответами
+        # Например, сохранить их в базу данных
+        for question_id, answer_text in data['responses']:
+            await add_response(user=message.from_user.id, question=question_id, answer=answer_text)
     
-    
+    await state.clear()  # Завершаем машину состояний
+    await message.answer("Брифинг завершён, спасибо за участие.", reply_markup=kb.user_main)   
     
         
 @router.message()
