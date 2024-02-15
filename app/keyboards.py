@@ -78,8 +78,8 @@ start_briefing_kb = InlineKeyboardMarkup(inline_keyboard=[
             InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
 
 in_briefing_kb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text='Продолжить', callback_data='next_question_'),
-        InlineKeyboardButton(text='Изменить', callback_data='edit_answer_')],
+        [InlineKeyboardButton(text='Продолжить', callback_data='continue'),
+        InlineKeyboardButton(text='Изменить', callback_data='edit_answer')],
             [InlineKeyboardButton(text='Начать заново', callback_data='start_briefing'),
             InlineKeyboardButton(text='Закончить', callback_data='end_briefing')]])  
     

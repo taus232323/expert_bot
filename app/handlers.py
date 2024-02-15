@@ -199,66 +199,37 @@ async def send_next_question(callback: CallbackQuery, state: FSMContext):
             markup = kb.generate_markup(question.answer)
             
             await callback.message.answer(question.question, reply_markup=markup)
-            await BriefingStates.waiting_for_answer.set()
+            await state.set_state(BriefingStates.waiting_for_answer)
         else:
             await state.clear()
             await callback.message.answer("Брифинг завершен, спасибо за ваши ответы!", 
                                           reply_markup=kb.generate_end_markup())
         
-@router.message_handler(state=BriefingStates.waiting_for_answer)
+@router.message_handler(BriefingStates.waiting_for_answer)
 async def briefing_answer_received(message: Message, state: FSMContext):
     async with state.proxy() as data:
-        current_index = data['current_question_index']
-        
-        # Записываем ответ пользователя
         data['responses'].append(message.text)
-        # Отсылаем подтверждение и клавиатуру для действий
-        markup = ReplyKeyboardMarkup(resize_keyboard=True).row(
-            KeyboardButton('Продолжить'), KeyboardButton('Изменить')
-        )
-        await message.answer(f"Ваш ответ: {message.text}", reply_markup=markup)
-        # Устанавливаем следующее состояние ожидания действия пользователя
-        await BriefingStates.next()
+        await message.answer(f"Ваш ответ: {message.text}", reply_markup=kb.in_briefing_kb)
+    
+@router.callback_query(F.data == 'continue')
+async def continue_briefing(message: Message, state: FSMContext):
+    async with state.proxy() as data:
+        data['current_question_index'] += 1
+    await send_next_question(message, state)
 
+@router.callback_query(F.data == 'edit_answer')
+async def change_answer(message: Message, state: FSMContext):
+    async with state.proxy() as data:
+        data['responses'].pop()
+        data['current_question_index'] -= 1
+        await send_next_question(message, state)
+   
 @router.callback_query(F.data =='restart_briefing')
 async def restart_briefing(callback: CallbackQuery, state: FSMContext):
     await state.clear()
     await start_briefing(callback, state)
     
-@router.message_handler(F.text =='Продолжить', BriefingStates.waiting_for_answer)
-async def continue_briefing(message: Message, state: FSMContext):
-    async with state.proxy() as data:
-        data['current_question_index'] += 1
-    await send_next_question(message, state)
-    await state.reset_state(with_data=False) 
-
-# Обработчик для команды "Изменить"
-@router.message_handler(F.text=='Изменить', state=BriefingStates.waiting_for_answer)
-async def change_answer(message: Message, state: FSMContext):
-    # Поскольку мы уже сохраняем ответы в списке `responses`, пользователь может изменить последний ответ:
-    async with state.proxy() as data:
-        data['responses'] = data['responses'][:-1]  # Удаляем последний ответ
-        current_index = data['current_question_index']
-        # Повторно отправляем текущий вопрос
-        await send_current_question(message, current_index, state)
-   
-# Функция для отправки текущего вопроса
-async def send_current_question(callback: CallbackQuery, current_index: int, state: FSMContext):
-    briefing = await get_briefing()
-    briefing_questions = briefing.scalars().all()
-    question = briefing_questions[current_index]
-    markup = kb.generate_markup(question.answer)
-    await callback.message.answer(question.question, reply_markup=markup)
-    await BriefingStates.waiting_for_answer.set()
-
-# Обработчик для команды "Сначала"
-@router.message_handler(F.text =='Сначала', state='*')
-async def restart_briefing_command(message: Message, state: FSMContext):
-    await state.clear()  # Сбрасываем состояние и начинаем заново
-    await start_briefing(message)
-
-# Обработчик для команды "Завершить"
-@router.message_handler(F.text =='Завершить', state='*')
+@router.callback_query(F.data =='end_briefing')
 async def finish_briefing_command(message: Message, state: FSMContext):
     async with state.proxy() as data:
         # Перед завершением можете что-то сделать с сохранёнными ответами
@@ -266,8 +237,8 @@ async def finish_briefing_command(message: Message, state: FSMContext):
         for question_id, answer_text in data['responses']:
             await add_response(user=message.from_user.id, question=question_id, answer=answer_text)
     
-    await state.clear()  # Завершаем машину состояний
-    await message.answer("Брифинг завершён, спасибо за участие.", reply_markup=kb.user_main)   
+        await state.clear()  # Завершаем машину состояний
+        await message.answer("Брифинг завершён, спасибо за участие.", reply_markup=kb.user_main)   
     
         
 @router.message()
