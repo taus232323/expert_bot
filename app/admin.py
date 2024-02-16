@@ -24,8 +24,8 @@ get_instructions, delete_briefing
 admin = Router()
 scheduler = AsyncIOScheduler()
 
-contact_type_hint = "Введите тип контактной информации. Например: Фамилия, Имя, Отчество; Телефон; Адрес офиса; График работы; Ссылка на сайт, или социальные сети (Вводить по одной ссылке)"
-admin_hint = f"Возможные команды:\n\n/newsletter - Сделать рассылку\n\n/add_contact - Добавить контактную информацию\n\n/add_case - Добавить Кейс\n\n/add_event - Добавить Мероприятие\n\n/add_service - Добавить Услугу\n\n/create_briefing - Создать брифинг"
+contact_type_hint = "Введите тип контактной информации. Например: ФИО; Телефон; Адрес; График работы; Ссылка на сайт, или социальные сети"
+admin_hint = "Нажмите на кнопку в меню для просмотра, добавления или изменения информации"
      
 class AdminProtect(Filter):
     async def __call__(self, message: Message):
@@ -34,6 +34,17 @@ class AdminProtect(Filter):
                                      
 class Newsletter(StatesGroup):
     message = State()
+
+
+class AddWelcome(StatesGroup):
+    picture = State()
+    about = State()
+
+
+class EditWelcome(StatesGroup):
+    id = State()
+    picture = State()
+    about = State()
 
 
 class AddContact(StatesGroup):
@@ -68,6 +79,7 @@ class EditService(StatesGroup):
     title = State()
     description = State()
 
+
 class AddEvent(StatesGroup):
     title = State()
     description = State()
@@ -84,9 +96,11 @@ class EditEvent(StatesGroup):
 class AddInstruction(StatesGroup):
     description = State()
 
+
 class EditInstruction(StatesGroup):
     id = State()
     description = State()
+    
     
 class AddBriefing(StatesGroup):
     question = State()
@@ -98,17 +112,18 @@ class EditBriefing(StatesGroup):
     question = State()
     answer = State()
     
-
-@admin.message(AdminProtect(), Command('apanel'))
-async def apanel(message: Message):
-    await message.answer(admin_hint)
-
-@admin.message(AdminProtect(), Command('add_contact'))
-async def add_contact(message: Message, state: FSMContext):
-    await state.set_state(AddContact.contact_type)
-    await message.answer(contact_type_hint, reply_markup=kb.cancel_action)
     
-@admin.callback_query(AdminProtect(), F.data =="add_contact")
+@admin.message(AdminProtect(), F.text == "Приветствие")    
+async def welcome_selected(message: Message):
+    welcome = await get_welcome()
+    if len(welcome) < 2:
+        await message.answer('Вы ещё не добавили приветственного сообщения. Хотите сделать это сейчас?',
+                             reply_markup=kb.new_welcome)
+    else:
+        await message.answer_photo(welcome.picture, welcome.about, reply_markup=kb.edit_welcome)
+    
+    
+@admin.callback_query(AdminProtect(), F.data == "add_contact")
 async def add_more_contact(callback: CallbackQuery, state: FSMContext):
     await state.set_state(AddContact.contact_type)
     await callback.message.edit_text(contact_type_hint, reply_markup=kb.cancel_action)
@@ -157,7 +172,8 @@ async def edit_contact_value(message: Message, state: FSMContext):
     await message.answer('Контактная информация успешно изменена')
     contacts = await get_contacts()
     contact_info = "\n".join([f"{contact.contact_type}: {contact.value}" for contact in contacts])
-    await message.answer(f"Моя контактная информация и график работы:\n{contact_info}", reply_markup=kb.contacts_kb)
+    await message.answer(f"Моя контактная информация и график работы:\n{contact_info}", 
+                         reply_markup=kb.contacts_kb)
     
 @admin.callback_query(AdminProtect(), F.data == "delete_contact")
 async def delete_contact(callback: CallbackQuery):
@@ -169,11 +185,6 @@ async def confirm_delete_contact(callback: CallbackQuery):
     await callback.message.delete_reply_markup()
     await delete_contacts()
     await callback.answer("Контактная информацию успешно удалена")    
-
-@admin.message(AdminProtect(), Command('add_case'))
-async def add_case(message: Message, state: FSMContext):
-    await state.set_state(AddCase.title)
-    await message.answer('Введите название кейса', reply_markup=kb.cancel_action)
     
 @admin.callback_query(AdminProtect(), F.data == "add_case")
 async def add_more_case(callback: CallbackQuery, state: FSMContext):
@@ -219,11 +230,6 @@ async def edit_case_description(message: Message, state: FSMContext):
     await edit_case(data)
     await state.clear()
     await message.answer('Кейс успешно изменён', reply_markup=await kb.admin_get_cases_keyboard())
-
-@admin.message(AdminProtect(), Command('add_service'))
-async def add_service(message: Message, state: FSMContext):
-    await state.set_state(AddService.title)
-    await message.answer('Введите название услуги', reply_markup=kb.cancel_action)
     
 @admin.callback_query(AdminProtect(), F.data == "add_service")
 async def add_more_service(callback: CallbackQuery, state: FSMContext):
@@ -269,11 +275,6 @@ async def edit_service_description(message: Message, state: FSMContext):
     await edit_service(data)
     await state.clear()
     await message.answer('Услуга успешно изменена', reply_markup=await kb.admin_get_services_keyboard())
-
-@admin.message(AdminProtect(), Command('add_event'))
-async def add_event(message: Message, state: FSMContext):
-    await state.set_state(AddEvent.title)
-    await message.answer('Введите название события', reply_markup=kb.cancel_action)
     
 @admin.callback_query(AdminProtect(), F.data == "add_event")
 async def add_more_event(callback: CallbackQuery, state: FSMContext):
@@ -430,7 +431,7 @@ async def instruction(callback: CallbackQuery):
 @admin.callback_query(AdminProtect(), F.data == "add_instruction")
 async def add_instruction(callback: CallbackQuery, state: FSMContext):
     await state.set_state(AddInstruction.description)
-    await callback.message.edit_text('Введите свою инструкцию по прохождения брифинга', reply_markup=kb.cancel_action)
+    await callback.message.edit_text('Введите свою инструкцию по прохождению брифинга', reply_markup=kb.cancel_action)
 
 @admin.message(AdminProtect(), AddInstruction.description)
 async def save_instruction(message: Message, state: FSMContext):
@@ -445,7 +446,7 @@ async def save_instruction(message: Message, state: FSMContext):
 @admin.callback_query(AdminProtect(), F.data == "edit_instruction")
 async def edit_instruction(callback: CallbackQuery, state: FSMContext):
     await state.set_state(AddInstruction.description)
-    await callback.message.edit_text('Введите новую инструкцию по прохождения брифинга', reply_markup=kb.cancel_action)
+    await callback.message.edit_text('Введите новую инструкцию по прохождению брифинга', reply_markup=kb.cancel_action)
     
 @admin.callback_query(AdminProtect(), F.data == "delete_instruction")
 async def delete_instruction(callback: CallbackQuery):
@@ -453,6 +454,7 @@ async def delete_instruction(callback: CallbackQuery):
     await callback.message.edit_text('Инструкция удалена', reply_markup=kb.admin_get_briefing_kb)
 
 @admin.callback_query(AdminProtect(), F.data == "create_briefing")
+
 async def create_briefing(callback: CallbackQuery, state: FSMContext):
     await callback.message.edit_text('Сейчас Вы будете создавать брифинг следуйте моим инструкциям и у Вас всё получится')
     await state.set_state(AddBriefing.question)
@@ -528,9 +530,9 @@ async def edit_question_answer(message: Message, state: FSMContext):
 @admin.callback_query(AdminProtect(), F.data == "newsletter")
 async def newsletter(message: Message, state: FSMContext):
     await state.set_state(Newsletter.message)
-    await message.answer('Отправьте сообщение, которое вы хотите разослать всем пользователям', reply_markup=kb.cancel_action)
+    await message.answer('Отправьте сообщение, которое вы хотите разослать всем пользователям', 
+                         reply_markup=kb.cancel_action)
     
-
 @admin.message(AdminProtect(), Newsletter.message)
 async def newsletter_message(message: Message, state: FSMContext):
     await message.answer('Подождите... идёт рассылка.')
@@ -541,10 +543,10 @@ async def newsletter_message(message: Message, state: FSMContext):
             pass
     await message.answer('Рассылка успешно завершена.')
     await state.clear()
-
+    
 @admin.callback_query(AdminProtect(), F.data.startswith("cancel_"))
 async def cancel_operation(callback: CallbackQuery, state: FSMContext):
     await callback.message.delete_reply_markup()
     await state.clear()
     await callback.answer("Операция отменена")
-    await callback.message.answer(admin_hint)
+    await callback.message.answer(admin_hint, reply_markup=kb.admin_main)

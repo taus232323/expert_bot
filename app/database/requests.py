@@ -211,15 +211,15 @@ async def delete_instructions():
         await session.execute(delete(Instructions))
         await session.commit()
 
-async def set_welcome(data):
-    async with async_session() as session:
-        session.add(Welcome(**data))
-        await session.commit()
-
 async def get_welcome():
     async with async_session() as session:
         welcome = await session.scalar(select(Welcome))
         return welcome
+
+async def set_welcome(data):
+    async with async_session() as session:
+        session.add(Welcome(**data))
+        await session.commit()
         
 async def edit_welcome(data):
     async with async_session() as session:
@@ -238,3 +238,13 @@ async def add_response(data):
     async with async_session() as session:
         await session.add(UserBriefing(**data))
         await session.commit()
+        
+async def delete_user_briefing(user_id):
+    async with async_session() as session:
+        await session.execute(delete(UserBriefing).where(UserBriefing.user == user_id))
+        await session.commit()
+        
+async def get_user_briefing(user_id):
+    async with async_session() as session:
+        user_briefing = await session.scalars(select(UserBriefing).where(UserBriefing.user == user_id))
+        return user_briefing
