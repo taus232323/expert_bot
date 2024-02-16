@@ -24,7 +24,10 @@ get_instructions, delete_briefing
 admin = Router()
 scheduler = AsyncIOScheduler()
 
-contact_type_hint = "Введите тип контактной информации. Например: ФИО; Телефон; Адрес; График работы; Ссылка на сайт, или социальные сети"
+contact_type_hint = (
+"Введите тип контактной информации. Например: ФИО; Телефон; Адрес; График"
+"работы; Ссылка на сайт, или социальные сети"
+)
 admin_hint = "Нажмите на кнопку в меню для просмотра, добавления или изменения информации"
      
 class AdminProtect(Filter):
@@ -121,7 +124,52 @@ async def welcome_selected(message: Message):
                              reply_markup=kb.new_welcome)
     else:
         await message.answer_photo(welcome.picture, welcome.about, reply_markup=kb.edit_welcome)
+
+@admin.callback_query(AdminProtect(), F.data == "new_welcome")
+async def new_welcome(callback: CallbackQuery, state: FSMContext):
+    await callback.message.edit_text('Для начала отправьте своё самое лучшее фото',
+                                     reply_markup=kb.cancel_action)
+    await  state.set_state(AddWelcome.picture)
+
+@admin.message(AdminProtect(), AddWelcome.picture)
+async def add_welcome_picture(message: Message, state: FSMContext):
+    await state.update_data(picture=message.photo[-1].file_id)
+    await state.set_state(AddWelcome.about)
+    await message.answer(
+    'Теперь расскажите вкратце кто Вы  и чем занимаетесь. Остальное мы позже добавим в соответствующие пункты меню', 
+                        reply_markup=kb.cancel_action)
     
+@admin.message(AdminProtect(), AddWelcome.about)
+async def add_welcome_about(message: Message, state: FSMContext):
+    await state.update_data(about=message.text)
+    data = await state.get_data()
+    await set_welcome(data)
+    await state.clear()
+    await message.answer(
+        'Приветственное сообщение успешно добавлено. Теперь можно добавить информацию в другие пункты меню ниже', 
+        reply_markup=kb.admin_main)
+    
+@admin.callback_query(AdminProtect(), F.data == "edit_welcome")
+async def edit_welcome(callback: CallbackQuery, state: FSMContext):
+    await callback.message.edit_text('Пришлите фото которое ещё лучше предыдущего', reply_markup=kb.cancel_action)
+    await state.set_state(EditWelcome.picture)
+    
+@admin.message(AdminProtect(), EditWelcome.picture)
+async def edit_welcome_picture(message: Message, state: FSMContext):
+    await state.update_data(picture=message.photo[-1].file_id)
+    await state.set_state(EditWelcome.about)
+    await message.answer(
+        'Теперь добавьте более актуальную и интересную информацию о себе', reply_markup=kb.cancel_action)
+    
+@admin.message(AdminProtect(), EditWelcome.about)
+async def edit_welcome_about(message: Message, state: FSMContext):
+    await state.update_data(about=message.text)
+    data = await state.get_data()
+    await set_welcome(data)
+    await state.clear()
+    await message.answer(
+        'Приветственное сообщение успешно изменено. Теперь можно добавить информацию в другие пункты меню ниже',
+        reply_markup=kb.admin_main)
     
 @admin.callback_query(AdminProtect(), F.data == "add_contact")
 async def add_more_contact(callback: CallbackQuery, state: FSMContext):
@@ -143,7 +191,7 @@ async def add_contact_value(message: Message, state: FSMContext):
     await message.answer('Контактная информация успешно добавлена')
     contacts = await get_contacts()   
     contact_info = "\n".join([f"{contact.contact_type}: {contact.value}" for contact in contacts])
-    await message.answer(f"Моя контактная информация и график работы:\n{contact_info}", reply_markup=kb.contacts_kb)
+    await message.answer(f"Моя контактная информация и график работы:\n{contact_info}", reply_markup=kb.contacts)
     
 @admin.callback_query(AdminProtect(), F.data == "edit_contacts")
 async def edit_contacts(callback: CallbackQuery):
@@ -173,7 +221,7 @@ async def edit_contact_value(message: Message, state: FSMContext):
     contacts = await get_contacts()
     contact_info = "\n".join([f"{contact.contact_type}: {contact.value}" for contact in contacts])
     await message.answer(f"Моя контактная информация и график работы:\n{contact_info}", 
-                         reply_markup=kb.contacts_kb)
+                         reply_markup=kb.contacts)
     
 @admin.callback_query(AdminProtect(), F.data == "delete_contact")
 async def delete_contact(callback: CallbackQuery):
@@ -423,10 +471,10 @@ async def instruction(callback: CallbackQuery):
     default_instruction = f"<b>Вы не добавили инструкцию. По умолчанию она такая:</b>\n Этот брифинг создан, чтобы упростить наше будущее сотрудничество и не займет много Вашего времени"
     if instructions:
         instr_text = f"{instructions.description if instructions else None}"
-        await callback.message.edit_text(instr_text, reply_markup=kb.edit_instruction_kb)
+        await callback.message.edit_text(instr_text, reply_markup=kb.edit_instruction)
     else:
         instr_text = default_instruction        
-        await callback.message.edit_text(instr_text, reply_markup=kb.new_instruction_kb)
+        await callback.message.edit_text(instr_text, reply_markup=kb.new_instruction)
 
 @admin.callback_query(AdminProtect(), F.data == "add_instruction")
 async def add_instruction(callback: CallbackQuery, state: FSMContext):
@@ -441,7 +489,7 @@ async def save_instruction(message: Message, state: FSMContext):
     await set_instructions(data)
     await state.clear()
     await message.answer("Инструкция сохранена. Теперь можно приступить к созданию брифнга", 
-                         reply_markup=kb.in_create_briefing_kb) 
+                         reply_markup=kb.in_create_briefing) 
 
 @admin.callback_query(AdminProtect(), F.data == "edit_instruction")
 async def edit_instruction(callback: CallbackQuery, state: FSMContext):
@@ -451,7 +499,7 @@ async def edit_instruction(callback: CallbackQuery, state: FSMContext):
 @admin.callback_query(AdminProtect(), F.data == "delete_instruction")
 async def delete_instruction(callback: CallbackQuery):
     await delete_instructions()
-    await callback.message.edit_text('Инструкция удалена', reply_markup=kb.admin_get_briefing_kb)
+    await callback.message.edit_text('Инструкция удалена', reply_markup=kb.admin_get_briefing)
 
 @admin.callback_query(AdminProtect(), F.data == "create_briefing")
 
@@ -474,7 +522,7 @@ async def add_briefing_answer(message: Message, state: FSMContext):
     await add_question(data)
     await state.clear()
     await message.answer("Вопрос добавлен. Хотите посмотреть что получилось или добавить ещё один?",
-                         reply_markup=kb.in_create_briefing_kb)
+                         reply_markup=kb.in_create_briefing)
 
 @admin.callback_query(AdminProtect(), F.data == "add_question")
 async def add_question_to_briefing(callback: CallbackQuery, state: FSMContext):
@@ -487,18 +535,18 @@ async def add_question_to_briefing(callback: CallbackQuery, state: FSMContext):
 async def edit_briefing(callback: CallbackQuery):
     await callback.message.delete_reply_markup()
     await callback.message.answer('Хотите добавить новый вопрос, изменить существующий или удалить брифинг целиком?', 
-                                     reply_markup=kb.edit_briefing_kb)
+                                     reply_markup=kb.edit_briefing)
 
 @admin.callback_query(AdminProtect(), F.data == "predelete_briefing")
 async def predelete_briefing(callback: CallbackQuery):
     warning = 'Эта операция удалит весь брифинг вместе с ответами пользователей, '
     'но вы можете изменить вопросы по отдельности'
-    await callback.message.edit_text(warning, reply_markup=kb.confirm_delete_briefing_kb)
+    await callback.message.edit_text(warning, reply_markup=kb.confirm_delete_briefing)
     
 @admin.callback_query(AdminProtect(), F.data == "delete_briefing")
 async def delete_briefing(callback: CallbackQuery):
     await delete_briefing()
-    await callback.message.edit_text('Брифинг удалён', reply_markup=kb.in_create_briefing_kb)
+    await callback.message.edit_text('Брифинг удалён', reply_markup=kb.in_create_briefing)
 
 @admin.callback_query(AdminProtect(), F.data == "edit_question")
 async def edit_question_id(callback: CallbackQuery, state: FSMContext):
@@ -524,7 +572,7 @@ async def edit_question_answer(message: Message, state: FSMContext):
     await edit_question(data)
     await state.clear()
     await message.answer('Вопрос изменён. Хотите посмотреть что получилось или добавить ещё один?', 
-                         reply_markup=kb.in_create_briefing_kb)
+                         reply_markup=kb.in_create_briefing)
 
 @admin.message(AdminProtect(), Command('newsletter'))
 @admin.callback_query(AdminProtect(), F.data == "newsletter")
@@ -550,3 +598,4 @@ async def cancel_operation(callback: CallbackQuery, state: FSMContext):
     await state.clear()
     await callback.answer("Операция отменена")
     await callback.message.answer(admin_hint, reply_markup=kb.admin_main)
+    

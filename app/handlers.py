@@ -26,8 +26,10 @@ async def cmd_start(message: Message):
     if isinstance(message, Message):
         await set_user(message.from_user.id, message.from_user.username)
     if message.from_user.id in ADMIN_USER_IDS:
-        await message.answer(f"Добро пожаловать, администратор {message.from_user.first_name}!"
-            "Нажмите на кнопку в меню для просмотра, добавления или изменения информации", reply_markup=kb.user_main)
+        if not welcome:
+            await message.answer(f"Добро пожаловать, администратор {message.from_user.first_name}!"
+            "Нажмите на кнопку в меню для просмотра, добавления или изменения информации",
+            reply_markup=kb.user_main)
     else:
         welcome = await get_welcome()
         if not welcome:
@@ -50,13 +52,13 @@ async def contact_selected(message: Message):
     contact_info = "\n".join([f"{contact.contact_type}: {contact.value}" for contact in contacts])
     if len(contact_info) < 2:
         if message.from_user.id in ADMIN_USER_IDS:
-            await message.answer("Вы ещё не добавили ни одного контакта", reply_markup=kb.new_contacts_kb)
+            await message.answer("Вы ещё не добавили ни одного контакта", reply_markup=kb.new_contacts)
         else:
             await message.answer("Контактная информация отсутствует")
     else:
         await message.answer(f"Моя контактная информация и график работы:\n{contact_info}")
         if message.from_user.id in ADMIN_USER_IDS:
-            await message.answer("Выберите желаемую опцию:", reply_markup=kb.contacts_kb)
+            await message.answer("Выберите желаемую опцию:", reply_markup=kb.contacts)
    
 @router.message(F.text == "Кейсы")
 async def cases_selected(message: Message):
@@ -64,22 +66,22 @@ async def cases_selected(message: Message):
     cases_list = "\n".join([f"{case.title}" for case in cases])
     if len(cases_list) < 2:
         if message.from_user.id in ADMIN_USER_IDS:
-            await message.answer("Вы ещё не добавили ни одного кейса", reply_markup=kb.new_cases_kb)
+            await message.answer("Вы ещё не добавили ни одного кейса", reply_markup=kb.new_cases)
         else:
             await message.answer("Кейсы отсутствуют")
     else:
         if message.from_user.id in ADMIN_USER_IDS:
             await message.answer("Выберите кейс для изменения/удаления или добавьте новый", 
-                             reply_markup=await kb.admin_get_cases_keyboard())
+                             reply_markup=await kb.admin_get_cases_kb())
         else:    
-            await message.answer("Мои самые лучшие кейсы:", reply_markup=await kb.get_cases_keyboard())
+            await message.answer("Мои самые лучшие кейсы:", reply_markup=await kb.get_cases_kb())
     
 @router.callback_query(F.data.startswith("cases_"))    
 async def case_detail_selected(callback: CallbackQuery):
     case = await get_case_by_id(callback.data.split("_")[1])
     if callback.from_user.id in ADMIN_USER_IDS:
         await callback.message.edit_text(f"<b>{case.title}</b>\n\n{case.description}", 
-                                         reply_markup=await kb.case_chosen_keyboard(case.id))
+                                         reply_markup=await kb.case_chosen_kb(case.id))
     else:
         await callback.message.edit_text(f"<b>{case.title}</b>\n\n{case.description}")
         
@@ -89,7 +91,7 @@ async def service_selected(message: Message):
     services_list = "\n".join([f"{service.title}" for service in services])
     if len(services_list) < 2:
         if message.from_user.id in ADMIN_USER_IDS:
-            await message.answer("Вы ещё не добавили ни одной услуги", reply_markup=kb.new_services_kb)
+            await message.answer("Вы ещё не добавили ни одной услуги", reply_markup=kb.new_services)
         else:
             await message.answer("Услуги отсутствуют")
     else:
@@ -97,7 +99,7 @@ async def service_selected(message: Message):
             await message.answer("Выберите услугу для изменения/удаления или добавьте новую",
                              reply_markup=await kb.admin_get_services_keyboard())
         else:
-            await message.answer("Мои самые выгодные услуги:", reply_markup=await kb.get_services_keyboard())
+            await message.answer("Мои самые выгодные услуги:", reply_markup=await kb.get_services_kb())
         
 @router.callback_query(F.data.startswith("services_"))
 async def service_detail_selected(callback: CallbackQuery):
@@ -114,7 +116,7 @@ async def event_selected(message: Message):
     events_list = "\n".join([f"{event.title}" for event in events])
     if len(events_list) < 2:
         if message.from_user.id in ADMIN_USER_IDS:
-            await message.answer("Вы ещё не добавили ни одного мероприятия", reply_markup=kb.new_events_kb)
+            await message.answer("Вы ещё не добавили ни одного мероприятия", reply_markup=kb.new_events)
         else:
             await message.answer("Мероприятия отсутствуют")
     else:
@@ -163,9 +165,9 @@ async def show_instruction(message: Message):
         return instr_text
     else:
         if instructions:
-            await message.answer(text=instructions.description, reply_markup=await kb.start_briefing_kb())
+            await message.answer(text=instructions.description, reply_markup=await kb.start_briefing())
         else:
-            await message.answer(text=default_instruction, reply_markup=kb.start_briefing_kb)
+            await message.answer(text=default_instruction, reply_markup=kb.start_briefing)
 
 @router.callback_query(F.data == "briefing")
 @router.message(F.text == "Пройти опрос")
@@ -180,13 +182,13 @@ async def briefing_selected(message: Message):
         if message.from_user.id in ADMIN_USER_IDS:
             instructions = await show_instruction(message)
             await message.answer(f"<b>Инструкции:</b>\n{instructions}\n<b>Весь брифинг:</b>\n\n{briefing_text}",
-                                     reply_markup=kb.admin_get_briefing_kb)
+                                     reply_markup=kb.admin_get_briefing)
         else:
             await show_instruction(message)
     else:
         if message.from_user.id in ADMIN_USER_IDS:
             await message.answer("Вы ещё не создали брифинг. Можем это сделать прямо сейчас", 
-                                 reply_markup=kb.create_briefing_kb)
+                                 reply_markup=kb.create_briefing)
         else:
             await message.answer("Брифинг отсутствует", reply_markup=kb.user_main)
 
@@ -204,22 +206,22 @@ async def send_next_question(callback: CallbackQuery, state: FSMContext):
     current_index = data['current_question_index']
     if current_index < len(briefing_questions):
         question = briefing_questions[current_index]
-        markup = kb.generate_markup(question.answer)
+        markup = kb.generate_answer(question.answer)
             
         await callback.message.answer(question.question, reply_markup=markup)
         await state.set_state(BriefingStates.waiting_for_answer)
     else:
         await callback.message.answer("Брифинг завершен, спасибо за ваши ответы!", 
-                                          reply_markup=kb.generate_end_markup())
+                                          reply_markup=kb.briefing_finished())
         await send_report()
         
 @router.message(BriefingStates.waiting_for_answer)
 async def briefing_answer_received(message: Message, state: FSMContext):
     await state.update_data(response=message.text)
-    await message.answer(f"Ваш ответ: {message.text}", reply_markup=kb.in_briefing_kb)
+    await message.answer(f"Ваш ответ: {message.text}", reply_markup=kb.in_briefing)
     
 @router.callback_query(F.data == 'continue')
-async def continue_briefing(message: Message, state: FSMContext):
+async def continue_briefing(state: FSMContext):
     data = await state.get_data()
     await add_response(data)
     next_index = data['current_question_index'] + 1
@@ -227,7 +229,7 @@ async def continue_briefing(message: Message, state: FSMContext):
     await state.set_state(BriefingStates.question)
 
 @router.callback_query(F.data == 'edit_answer')
-async def change_answer(message: Message, state: FSMContext):
+async def change_answer(state: FSMContext):
     data = await state.get_data()
     await add_response(data)
     next_index = data['current_question_index'] - 1
@@ -243,7 +245,7 @@ async def restart_briefing(callback: CallbackQuery, state: FSMContext):
 async def preend_briefing(callback: CallbackQuery):
     await callback.message.edit_text(
         'Брифинг не завершён, ответы не будут сохранены. Если вы хотите продолжить, нажмите кнопку "Вернуться"',
-        reply_markup=kb.generate_end_markup())
+        reply_markup=kb.briefing_finished())
 
 @router.callback_query(F.data == 'resume_briefing')
 async def resume_briefing(callback: CallbackQuery):
@@ -262,7 +264,7 @@ async def prepare_report(message: Message):
     briefing_text = "\n".join(briefing_list)
     parts = []
     current_part = ""
-    for chunk in briefing_list:
+    for chunk in briefing_text:
         if len(chunk) + 1 < 4000:
                 return chunk
         else:
@@ -292,8 +294,7 @@ async def send_report(message: Message, state: FSMContext):
         for admin in ADMIN_USER_IDS:
             await message.answer(admin, f"<b>Заполненный брифинг от\n{user.username}:</b>\n\n{report}")
         
-      
-        
 @router.message()
 async def echo(message: Message):
     await message.answer(f"Я не понимаю, что вы хотите")
+    

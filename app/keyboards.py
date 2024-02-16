@@ -23,25 +23,26 @@ admin_main = ReplyKeyboardMarkup(
     input_field_placeholder='Выберите действие',
     one_time_keyboard=True)
 
-new_welcome_kb = InlineKeyboardMarkup(inline_keyboard=[
+new_welcome = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Создать', callback_data='add_welcome'),
         InlineKeyboardButton(text='Позже', callback_data='cancel_action')]])
 
 edit_welcome = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Изменить', callback_data='edit_welcome'),
-        InlineKeyboardButton(text='Удалить', callback_data='delete_welcome')]])
+        InlineKeyboardButton(text='Удалить', callback_data='delete_welcome')],
+    [InlineKeyboardButton(text='На главную', callback_data='cancel')]])
 
 confirm_delete_welcome = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Согласен', callback_data='delete_welcome'),
         InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
 
-contacts_kb = InlineKeyboardMarkup(inline_keyboard=[
+contacts = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text='Добавить', callback_data='add_contact'),
         InlineKeyboardButton(text='Изменить', callback_data='edit_contacts')],
             [InlineKeyboardButton(text='Удалить', callback_data='delete_contact'),
             InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
 
-new_contacts_kb = InlineKeyboardMarkup(inline_keyboard=[
+new_contacts = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Добавить', callback_data='add_contact'),
             InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
 
@@ -49,68 +50,72 @@ confirm_delete_contacts = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Согласен', callback_data='confirmed_delete_contacts'),
             InlineKeyboardButton(text='Отмена', callback_data='cancel_delete')]])
 
-new_cases_kb = InlineKeyboardMarkup(inline_keyboard=[
+new_cases = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Добавить', callback_data='add_case'),
             InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
 
-new_services_kb = InlineKeyboardMarkup(inline_keyboard=[
+new_services = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Добавить', callback_data='add_service'),
             InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
 
-new_events_kb = InlineKeyboardMarkup(inline_keyboard=[
+new_events = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Добавить', callback_data='add_event'),
             InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
 
-new_instruction_kb = InlineKeyboardMarkup(inline_keyboard=[
+new_instruction = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Добавить', callback_data='add_instruction'),
             InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
 
-edit_instruction_kb = InlineKeyboardMarkup(inline_keyboard=[
+edit_instruction = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Изменить', callback_data='edit_instruction'),
             InlineKeyboardButton(text='Удалить', callback_data='delete_instruction')],
     [InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
 
-create_briefing_kb = InlineKeyboardMarkup(inline_keyboard=[
+create_briefing = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Создать', callback_data='create_briefing'),
             InlineKeyboardButton(text='Отмена', callback_data='cancel_action')],
     [InlineKeyboardButton(text='Добавить инструкцию', callback_data='add_instruction')]])
 
-in_create_briefing_kb = InlineKeyboardMarkup(inline_keyboard=[
+in_create_briefing = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text='Добавить', callback_data='add_question'),
         InlineKeyboardButton(text='Посмотреть', callback_data='briefing')],
             [InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
 
-admin_get_briefing_kb = InlineKeyboardMarkup(inline_keyboard=[
+admin_get_briefing = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Изменить', callback_data='edit_briefing'),
             InlineKeyboardButton(text='Удалить', callback_data='predelete_briefing')],
     [InlineKeyboardButton(text='Инструкция', callback_data='instruction'),
     InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
 
-edit_briefing_kb = InlineKeyboardMarkup(inline_keyboard=[
+edit_briefing = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Добавить', callback_data='add_question'),
     InlineKeyboardButton(text='Изменить', callback_data='edit_question')],
     [InlineKeyboardButton(text='Удалить', callback_data='predelete_briefing'),
     InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
      
-confirm_delete_briefing_kb = InlineKeyboardMarkup(inline_keyboard=[
+confirm_delete_briefing = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Согласен', callback_data='delete_briefing'),
             InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
 
-start_briefing_kb = InlineKeyboardMarkup(inline_keyboard=[
+start_briefing = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Начать', callback_data='start_briefing'),
             InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
 
-in_briefing_kb = InlineKeyboardMarkup(inline_keyboard=[
+in_briefing = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text='Продолжить', callback_data='continue'),
         InlineKeyboardButton(text='Изменить', callback_data='edit_answer')],
             [InlineKeyboardButton(text='Начать заново', callback_data='start_briefing'),
             InlineKeyboardButton(text='Закончить', callback_data='preend_briefing')]])  
 
-end_briefing_selected_kb = InlineKeyboardMarkup(inline_keyboard=[
+end_briefing_selected = InlineKeyboardMarkup(inline_keyboard=[
  [InlineKeyboardButton(text='Вернуться', callback_data='resume_briefing'),
             InlineKeyboardButton(text='Закончить', callback_data='end_briefing')]])
     
-
+briefing_finished = InlineKeyboardMarkup(inline_keyboard=[
+     [InlineKeyboardButton(text='Сначала', callback_data='restart_briefing'),
+    InlineKeyboardButton(text='Меню', callback_data='to_main')]])
+    
+    
 participants_newsletter = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Сделать рассылку', callback_data='newsletter'),
      InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
@@ -127,7 +132,7 @@ async def edit_contact_kb():
     keyboard.add(InlineKeyboardButton(text='Отмена', callback_data='cancel_action'))
     return keyboard.adjust(2).as_markup()
 
-async def get_cases_keyboard():
+async def get_cases_kb():
     cases = await get_cases()
     keyboard = InlineKeyboardBuilder()
     for case in cases:
@@ -135,7 +140,7 @@ async def get_cases_keyboard():
     return keyboard.adjust(1).as_markup()
 
 
-async def admin_get_cases_keyboard():
+async def admin_get_cases_kb():
     cases = await get_cases()
     keyboard = InlineKeyboardBuilder()
     for case in cases:
@@ -144,14 +149,14 @@ async def admin_get_cases_keyboard():
     keyboard.add(InlineKeyboardButton(text='Отмена', callback_data='cancel_action'))
     return keyboard.adjust(1).as_markup()
 
-async def case_chosen_keyboard(case_id):
+async def case_chosen_kb(case_id):
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Изменить', callback_data=f'edit_case_{case_id}'),
     InlineKeyboardButton(text='Удалить', callback_data=f'delete_case_{case_id}')],
     [InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
     return keyboard
 
-async def get_services_keyboard():
+async def get_services_kb():
     services = await get_services()
     keyboard = InlineKeyboardBuilder()
     for service in services:
@@ -214,7 +219,7 @@ async def enroll_user_keyboard(event_id):
     keyboard.add(InlineKeyboardButton(text='Назад', callback_data='to_main'))
     return keyboard.adjust(2).as_markup()
 
-def generate_markup(answers):
+def generate_answer(answers):
     if len(answers) > 1:
         answers = answers.split(";")
         markup = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
@@ -224,8 +229,4 @@ def generate_markup(answers):
         markup = None
     return markup
 
-def generate_end_markup():
-    markup = InlineKeyboardMarkup(row_width=2)
-    markup.insert(InlineKeyboardButton('Сначала', callback_data='restart_briefing'))
-    markup.insert(InlineKeyboardButton('Меню', callback_data='to_main'))
-    return markup
+
