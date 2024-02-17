@@ -23,15 +23,15 @@ router = Router()
 
 @router.message(CommandStart())
 async def cmd_start(message: Message):
+    welcome = await get_welcome()
     if isinstance(message, Message):
         await set_user(message.from_user.id, message.from_user.username)
     if message.from_user.id in ADMIN_USER_IDS:
         if not welcome:
-            await message.answer(f"Добро пожаловать, администратор {message.from_user.first_name}!"
+            await message.answer(f"Добро пожаловать, администратор {message.from_user.first_name}! "
             "Нажмите на кнопку в меню для просмотра, добавления или изменения информации",
-            reply_markup=kb.user_main)
+            reply_markup=kb.admin_main)
     else:
-        welcome = await get_welcome()
         if not welcome:
             await message.answer(f"Добро пожаловать, {message.from_user.first_name}! Выберите вариант из меню ниже", 
                              reply_markup=kb.user_main)
@@ -56,7 +56,7 @@ async def contact_selected(message: Message):
         else:
             await message.answer("Контактная информация отсутствует")
     else:
-        await message.answer(f"Моя контактная информация и график работы:\n{contact_info}")
+        await message.answer(f"<b>Моя контактная информация и график работы:</b>\n{contact_info}")
         if message.from_user.id in ADMIN_USER_IDS:
             await message.answer("Выберите желаемую опцию:", reply_markup=kb.contacts)
    

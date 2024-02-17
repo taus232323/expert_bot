@@ -29,17 +29,17 @@ new_welcome = InlineKeyboardMarkup(inline_keyboard=[
 
 edit_welcome = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Изменить', callback_data='edit_welcome'),
-        InlineKeyboardButton(text='Удалить', callback_data='delete_welcome')],
-    [InlineKeyboardButton(text='На главную', callback_data='cancel')]])
+        InlineKeyboardButton(text='Удалить', callback_data='predelete_welcome')],
+    [InlineKeyboardButton(text='На главную', callback_data='cancel_action')]])
 
 confirm_delete_welcome = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='Согласен', callback_data='delete_welcome'),
+    [InlineKeyboardButton(text='Уверен', callback_data='delete_welcome'),
         InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
 
 contacts = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text='Добавить', callback_data='add_contact'),
         InlineKeyboardButton(text='Изменить', callback_data='edit_contacts')],
-            [InlineKeyboardButton(text='Удалить', callback_data='delete_contact'),
+            [InlineKeyboardButton(text='Удалить', callback_data='predelete_contact'),
             InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
 
 new_contacts = InlineKeyboardMarkup(inline_keyboard=[
@@ -47,7 +47,7 @@ new_contacts = InlineKeyboardMarkup(inline_keyboard=[
             InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
 
 confirm_delete_contacts = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='Согласен', callback_data='confirmed_delete_contacts'),
+    [InlineKeyboardButton(text='Согласен', callback_data='delete_contacts'),
             InlineKeyboardButton(text='Отмена', callback_data='cancel_delete')]])
 
 new_cases = InlineKeyboardMarkup(inline_keyboard=[
