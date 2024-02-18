@@ -173,8 +173,13 @@ async def add_question(data):
         
 async def get_question_by_id(question_id):
     async with async_session() as session:
-        question = await session.scalar(select(Briefing).where(Briefing.id == question_id))
+        question = await session.scalar(select(Briefing.question).where(Briefing.id == question_id))
         return question
+    
+async def get_answer_by_id(answer_id):
+    async with async_session() as session:
+        answer = await session.scalar(select(Briefing.answer).where(Briefing.id == answer_id))
+        return answer
                 
 async def edit_question(data):
     async with async_session() as session:
@@ -234,7 +239,7 @@ async def delete_welcome():
         await session.execute(delete(Welcome))
         await session.commit()
 
-async def add_response(data):
+async def set_response(data):
     async with async_session() as session:
         await session.add(UserBriefing(**data))
         await session.commit()

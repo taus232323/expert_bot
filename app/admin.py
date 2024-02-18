@@ -11,7 +11,6 @@ import asyncio
 
 
 from settings import ADMIN_USER_IDS, TOKEN
-
 import app.keyboards as kb
 from app.database.requests import (
 get_users, set_contact, get_contacts, delete_contacts, edit_contact, set_case, delete_case, edit_case,
@@ -176,7 +175,7 @@ async def edit_welcome_picture(message: Message, state: FSMContext):
 async def edit_welcome_about(message: Message, state: FSMContext):
     await state.update_data(about=message.text)
     data = await state.get_data()
-    await set_welcome(data)
+    await edit_welcome(data)
     await state.clear()
     await message.answer(
         'Приветственное сообщение успешно изменено. Теперь можно добавить информацию в другие пункты меню ниже',
@@ -271,6 +270,10 @@ async def add_more_case(callback: CallbackQuery, state: FSMContext):
     
 @admin.message(AdminProtect(), AddCase.title)
 async def add_case_title(message: Message, state: FSMContext):
+    if len(message.text) > 40:
+        await message.answer('Я же просил не больше 40 знаков. Попробуйте ещё раз', 
+                             reply_markup=kb.cancel_action)
+        return
     await state.update_data(title=message.text)
     await state.set_state(AddCase.description)
     await message.answer('Введите описание кейса', reply_markup=kb.cancel_action)
@@ -286,19 +289,28 @@ async def add_case_description(message: Message, state: FSMContext):
 @admin.callback_query(AdminProtect(), F.data.startswith("delete_case_"))
 async def delete_case_selected(callback: CallbackQuery):
     await delete_case(callback.data.split('_')[2])
-    await callback.answer("Кейс успешно удалён")
-    await callback.message.edit_text("Мои самые лучшие кейсы", reply_markup=await kb.admin_get_cases_kb())
+    await callback.answer("Кейс успешно удалён", reply_markup=await kb.admin_get_cases_kb())
+    markup = await kb.admin_get_cases_kb()
+    num_buttons = sum(len(row) for row in markup.inline_keyboard)
+    if num_buttons > 2: 
+        await callback.message.edit_text("Мои самые лучшие кейсы", reply_markup=markup)
+    else:
+        await callback.message.edit_text("Вы ещё не добавили ни одного кейса", reply_markup=kb.new_case)
     
 @admin.callback_query(AdminProtect(), F.data.startswith("edit_case_"))
 async def edit_case_selected(callback: CallbackQuery, state: FSMContext):
     await state.update_data(id=callback.data.split('_')[2])
     await state.set_state(EditCase.title)
     await callback.message.edit_text(
-        'Введите название кейса. Для корректного отображения в меню его длина не должна превышать 40 знаков', 
+        'Введите новое название кейса. Для корректного отображения в меню его длина не должна превышать 40 знаков', 
                                      reply_markup=kb.cancel_action)
     
 @admin.message(AdminProtect(), EditCase.title)
 async def edit_case_title(message: Message, state: FSMContext):
+    if len(message.text) > 40:
+        await message.answer('Я же просил не больше 40 знаков. Попробуйте ещё раз', 
+                             reply_markup=kb.cancel_action)
+        return
     await state.update_data(title=message.text)
     await state.set_state(EditCase.description)
     await message.answer('Введите описание кейса', reply_markup=kb.cancel_action)
@@ -312,7 +324,7 @@ async def edit_case_description(message: Message, state: FSMContext):
     await message.answer('Кейс успешно изменён', reply_markup=await kb.admin_get_cases_kb())
     
 @admin.callback_query(AdminProtect(), F.data == "add_service")
-async def add_more_service(callback: CallbackQuery, state: FSMContext):
+async def add_service(callback: CallbackQuery, state: FSMContext):
     await state.set_state(AddService.title)
     await callback.message.edit_text(
         'Введите название услуги. Для корректного отображения в меню его длина не должна превышать 40 знаков', 
@@ -320,6 +332,10 @@ async def add_more_service(callback: CallbackQuery, state: FSMContext):
 
 @admin.message(AdminProtect(), AddService.title)
 async def add_service_title(message: Message, state: FSMContext):
+    if len(message.text) > 40:
+        await message.answer('Я же просил не больше 40 знаков. Попробуйте ещё раз', 
+                             reply_markup=kb.cancel_action)
+        return
     await state.update_data(title=message.text)
     await state.set_state(AddService.description)
     await message.answer('Введите описание услуги', reply_markup=kb.cancel_action)
@@ -336,18 +352,27 @@ async def add_service_description(message: Message, state: FSMContext):
 async def delete_service_selected(callback: CallbackQuery):
     await delete_service(callback.data.split('_')[2])
     await callback.answer("Услуга успешно удалена")
-    await callback.message.edit_text("Мои самые выгодные услуги", reply_markup=await kb.admin_get_services_keyboard())
+    markup = await kb.admin_get_services_keyboard()
+    num_buttons = sum(len(row) for row in markup.inline_keyboard)
+    if num_buttons > 2: 
+        await callback.message.edit_text("Мои самые выгодные услуги", reply_markup=markup)
+    else:
+        await callback.message.edit_text("Вы ещё не добавили ни одной услуги", reply_markup=kb.new_service)
 
 @admin.callback_query(AdminProtect(), F.data.startswith("edit_service_"))
 async def edit_service_selected(callback: CallbackQuery, state: FSMContext):
     await state.update_data(id=callback.data.split('_')[2])
     await state.set_state(EditService.title)
     await callback.message.edit_text(
-        'Введите название услуги. Для корректного отображения в меню его длина не должна превышать 40 знаков', 
+        'Введите новое название услуги. Для корректного отображения в меню его длина не должна превышать 40 знаков', 
         reply_markup=kb.cancel_action)
     
 @admin.message(AdminProtect(), EditService.title)
 async def edit_service_title(message: Message, state: FSMContext):
+    if len(message.text) > 40:
+        await message.answer('Я же просил не больше 40 знаков. Попробуйте ещё раз', 
+                             reply_markup=kb.cancel_action)
+        return
     await state.update_data(title=message.text)
     await state.set_state(EditService.description)
     await message.answer('Введите описание услуги', reply_markup=kb.cancel_action)
@@ -369,6 +394,10 @@ async def add_more_event(callback: CallbackQuery, state: FSMContext):
     
 @admin.message(AdminProtect(), AddEvent.title)
 async def add_event_title(message: Message, state: FSMContext):
+    if len(message.text) > 40:
+        await message.answer('Я же просил не больше 40 знаков. Попробуйте ещё раз', 
+                             reply_markup=kb.cancel_action)
+        return
     await state.update_data(title=message.text)
     await state.set_state(AddEvent.description)
     await message.answer('Введите описание события', reply_markup=kb.cancel_action)
@@ -401,25 +430,34 @@ async def add_event_date(message: Message, state: FSMContext):
 async def predelete_event_selected(callback: CallbackQuery):
     event_id = callback.data.split('_')[2]
     warning = "Это действие удалит мероприятие вместе со списком участников, но Вы можете просто изменить его"
-    await callback.answer(warning, reply_markup=kb.confirm_delete_event_keyboard())
+    await callback.answer(warning, reply_markup=await kb.confirm_delete_event_keyboard(event_id))
     
 @admin.callback_query(AdminProtect(), F.data.startswith("delete_event_"))
 async def delete_event_selected(callback: CallbackQuery):
     event_id = callback.data.split('_')[2]
     await delete_event(event_id)
     await callback.answer("Мероприятие успешно удалено")
-    await callback.message.edit_text("Мои самые интересные мероприятия", reply_markup=await kb.admin_get_events_keyboard())    
+    markup = await kb.admin_get_events_keyboard()
+    num_buttons = sum(len(row) for row in markup.inline_keyboard)
+    if num_buttons > 2: 
+        await callback.message.edit_text("Мои самые интересные мероприятия", reply_markup=markup)    
+    else:
+        await callback.message.edit_text("У вас нет мероприятий", reply_markup=kb.new_event)
     
 @admin.callback_query(AdminProtect(), F.data.startswith("edit_event_"))
 async def edit_event_selected(callback: CallbackQuery, state: FSMContext):
     await state.update_data(id=callback.data.split('_')[2])
     await state.set_state(EditEvent.title)
     await callback.message.edit_text(
-        'Введите название события. Для корректного отображения в меню его длина не должна превышать 40 знаков', 
+        'Введите новое название события. Для корректного отображения в меню его длина не должна превышать 40 знаков', 
         reply_markup=kb.cancel_action)
     
 @admin.message(AdminProtect(), EditEvent.title)
 async def edit_event_title(message: Message, state: FSMContext):
+    if len(message.text) > 40:
+        await message.answer('Я же просил не больше 40 знаков. Попробуйте ещё раз', 
+                             reply_markup=kb.cancel_action)
+        return
     await state.update_data(title=message.text)
     await state.set_state(EditEvent.description)
     await message.answer('Введите описание события', reply_markup=kb.cancel_action)
@@ -428,14 +466,15 @@ async def edit_event_title(message: Message, state: FSMContext):
 async def edit_event_description(message: Message, state: FSMContext):
     await state.update_data(description=message.text)
     await state.set_state(EditEvent.date)
-    await message.answer('Введите дату события в формате ДД.ММ.ГГГГ ЧЧ:ММ', reply_markup=kb.cancel_action)
+    await message.answer(f"Введите дату события в формате\nДД.ММ.ГГГГ ЧЧ:ММ", reply_markup=kb.cancel_action)
     
 @admin.message(AdminProtect(), EditEvent.date)
 async def edit_event_date(message: Message, state: FSMContext):
     try:
         date = datetime.strptime(message.text, '%d.%m.%Y %H:%M')
     except ValueError:
-        await message.answer('Неверный формат даты и времени. Пожалуйста, введите дату и время события в формате ДД.ММ.ГГГГ ЧЧ:ММ')
+        await message.answer(
+            f'Неверный формат даты и времени. Пожалуйста, введите дату и время события в формате\nДД.ММ.ГГГГ ЧЧ:ММ')
         return
     else:
         if date < datetime.now()  + timedelta(days=1):
@@ -454,7 +493,7 @@ async def check_participants(callback: CallbackQuery):
     participants = await get_participants(event_id)
     event = await get_event_by_id(event_id)
     if not participants:
-        await callback.message.edit_text("Участников нет")
+        await callback.message.edit_text("Участников нет", reply_markup=kb.cancel_action)
     else:
         participant_text_list = []
         for i, participant in enumerate(participants, 1):
@@ -539,9 +578,9 @@ async def edit_instruction(callback: CallbackQuery, state: FSMContext):
 async def edit_instruction(message: Message, state: FSMContext):
     await state.update_data(description=message.text)
     data = await state.get_data()
-    await set_instructions(data)
+    await edit_instructions(data)
     await state.clear()
-    await message.answer("Инструкция измененаТеперь можно приступить к созданию брифнга", 
+    await message.answer("Инструкция изменена. Теперь можно приступить к созданию брифнга", 
                          reply_markup=kb.in_create_briefing)
         
 @admin.callback_query(AdminProtect(), F.data == "delete_instruction")
@@ -571,6 +610,24 @@ async def add_briefing_answer(message: Message, state: FSMContext):
     await message.answer("Вопрос добавлен. Хотите посмотреть что получилось или добавить ещё один?",
                          reply_markup=kb.in_create_briefing)
 
+@admin.callback_query(AdminProtect(), F.data == "view_briefing")
+async def view_briefing(callback: CallbackQuery):
+    briefing = await get_briefing()
+    instructions = await get_instructions()
+    default_instruction = f"Этот брифинг создан, чтобы упростить наше будущее сотрудничество и не займет много Вашего времени"
+    if instructions:
+        instr_text = f"{instructions.description if instructions else None}"
+    else:
+        instr_text = default_instruction
+    briefing_list = []
+    for brief in briefing:
+        answer = brief.answer if len(brief.answer) > 2 else "*Ответ в свободной форме*"
+        briefing_list.append(f"{brief.id} {brief.question}\n{answer}")
+    briefing_text = "\n".join(briefing_list)
+    if briefing_text:
+        await callback.message.answer(f"<b>Инструкции:</b>\n{instr_text}\n<b>Весь брифинг:</b>\n\n{briefing_text}",
+                                     reply_markup=kb.admin_get_briefing)
+
 @admin.callback_query(AdminProtect(), F.data == "add_question")
 async def add_question_to_briefing(callback: CallbackQuery, state: FSMContext):
     await callback.message.edit_text('Давайте добавим ещё один вопрос')
@@ -591,9 +648,9 @@ async def predelete_briefing(callback: CallbackQuery):
     await callback.message.edit_text(warning, reply_markup=kb.confirm_delete_briefing)
     
 @admin.callback_query(AdminProtect(), F.data == "delete_briefing")
-async def delete_briefing(callback: CallbackQuery):
+async def confirmed_delete_briefing(callback: CallbackQuery):
     await delete_briefing()
-    await callback.message.edit_text('Брифинг удалён', reply_markup=kb.in_create_briefing)
+    await callback.message.edit_text('Брифинг удалён', reply_markup=kb.create_briefing)
 
 @admin.callback_query(AdminProtect(), F.data == "edit_question")
 async def edit_question_id(callback: CallbackQuery, state: FSMContext):
@@ -601,7 +658,7 @@ async def edit_question_id(callback: CallbackQuery, state: FSMContext):
     await callback.message.edit_text('Введите номер вопроса, который Вы желаете изменить', reply_markup=kb.cancel_action)
     
 @admin.message(AdminProtect(), EditBriefing.id)
-async def edit_question(message: Message, state: FSMContext):
+async def edit_question_selected(message: Message, state: FSMContext):
     await state.update_data(id=message.text)
     await state.set_state(EditBriefing.question)
     await message.answer('Введите новый вопрос', reply_markup=kb.cancel_action)
@@ -610,7 +667,9 @@ async def edit_question(message: Message, state: FSMContext):
 async def edit_question_text(message: Message, state: FSMContext):
     await state.update_data(question=message.text)
     await state.set_state(EditBriefing.answer)
-    await message.answer('Введите новый ответ', reply_markup=kb.cancel_action)
+    await message.answer('Введите новые варианты ответа через знак точки с запятой ";", либо знак минус '
+                         '"-" если хотите, чтобы ответ был в свободной форме',
+                         reply_markup=kb.cancel_action)
     
 @admin.message(AdminProtect(), EditBriefing.answer)
 async def edit_question_answer(message: Message, state: FSMContext):
@@ -639,12 +698,7 @@ async def newsletter_message(message: Message, state: FSMContext):
     await message.answer('Рассылка успешно завершена.')
     await state.clear()
     
-@admin.callback_query(AdminProtect(), F.data.startswith("cancel_"))
-async def cancel_operation(callback: CallbackQuery, state: FSMContext):
-    await callback.message.delete_reply_markup()
-    await state.clear()
-    await callback.answer("Операция отменена")
-    await callback.message.answer(admin_hint, reply_markup=kb.admin_main)
+
     
 async def to_main(message: Message):
     await message.answer(admin_hint, reply_markup=kb.admin_main)

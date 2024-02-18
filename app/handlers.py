@@ -3,14 +3,17 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
+from aiogram.exceptions import TelegramForbiddenError
 
 from settings import ADMIN_USER_IDS
 import app.keyboards as kb
 from app.database.requests import (
     get_welcome, get_contacts, set_user, get_cases, get_case_by_id, get_services, get_service_by_id, 
-    get_events, get_event_by_id, set_participant, get_briefing, get_instructions, add_response,
-    delete_user_briefing, get_user_briefing, get_users,
+    get_events, get_event_by_id, set_participant, get_briefing, get_instructions, set_response,
+    delete_user_briefing, get_user_briefing, get_users, get_question_by_id
     )
+
+admin_hint = "Нажмите на кнопку в меню для просмотра, добавления или изменения информации"
 
 
 class BriefingStates(StatesGroup):
@@ -52,7 +55,7 @@ async def contact_selected(message: Message):
     contact_info = "\n".join([f"{contact.contact_type}: {contact.value}" for contact in contacts])
     if len(contact_info) < 2:
         if message.from_user.id in ADMIN_USER_IDS:
-            await message.answer("Вы ещё не добавили ни одного контакта", reply_markup=kb.new_contacts)
+            await message.answer("Вы ещё не добавили ни одного контакта", reply_markup=kb.new_contact)
         else:
             await message.answer("Контактная информация отсутствует")
     else:
@@ -64,9 +67,9 @@ async def contact_selected(message: Message):
 async def cases_selected(message: Message):
     cases = await get_cases()
     cases_list = "\n".join([f"{case.title}" for case in cases])
-    if len(cases_list) < 2:
+    if len(cases_list) < 1:
         if message.from_user.id in ADMIN_USER_IDS:
-            await message.answer("Вы ещё не добавили ни одного кейса", reply_markup=kb.new_cases)
+            await message.answer("Вы ещё не добавили ни одного кейса", reply_markup=kb.new_case)
         else:
             await message.answer("Кейсы отсутствуют")
     else:
@@ -91,7 +94,7 @@ async def service_selected(message: Message):
     services_list = "\n".join([f"{service.title}" for service in services])
     if len(services_list) < 2:
         if message.from_user.id in ADMIN_USER_IDS:
-            await message.answer("Вы ещё не добавили ни одной услуги", reply_markup=kb.new_services)
+            await message.answer("Вы ещё не добавили ни одной услуги", reply_markup=kb.new_service)
         else:
             await message.answer("Услуги отсутствуют")
     else:
@@ -108,7 +111,21 @@ async def service_detail_selected(callback: CallbackQuery):
         await callback.message.edit_text(f"<b>{service.title}</b>\n\n{service.description}", 
                                          reply_markup=await kb.service_chosen_keyboard(service.id))
     else:
-        await callback.message.edit_text(f"<b>{service.title}</b>\n\n{service.description}")
+        await callback.message.edit_text(f"<b>{service.title}</b>\n\n{service.description}",
+                                         reply_markup=await kb.order_service_keyboard(service.id))
+        
+@router.callback_query(F.data.startswith("order_service_"))
+async def order_service(callback: CallbackQuery):
+    service = await get_service_by_id(callback.data.split("_")[2])
+    user = callback.from_user.username
+    await callback.message.edit_text(
+        f"Вы заказали услугу <b>{service.title}</b>. Я Вам напишу в самое ближайшее время")
+    for admin in ADMIN_USER_IDS:
+        try:
+            await callback.message.send_copy(chat_id=admin, 
+                text=f"Заказ услуги {service.title} от @{user}. Этот клиент очень хочет, чтобы Вы ему написали")
+        except TelegramForbiddenError:
+            print(f"Не удалось отправить сообщение админу @{admin}")
                
 @router.message(F.text == "Мероприятия")
 async def event_selected(message: Message):
@@ -116,7 +133,7 @@ async def event_selected(message: Message):
     events_list = "\n".join([f"{event.title}" for event in events])
     if len(events_list) < 2:
         if message.from_user.id in ADMIN_USER_IDS:
-            await message.answer("Вы ещё не добавили ни одного мероприятия", reply_markup=kb.new_events)
+            await message.answer("Вы ещё не добавили ни одного мероприятия", reply_markup=kb.new_event)
         else:
             await message.answer("Мероприятия отсутствуют")
     else:
@@ -156,7 +173,7 @@ async def enroll_user(callback: CallbackQuery):
 
 async def show_instruction(message: Message):
     instructions = await get_instructions()
-    default_instruction = f"<b>Вы не добавили инструкцию. По умолчанию она такая:</b>\n Этот брифинг создан, чтобы упростить наше будущее сотрудничество и не займет много Вашего времени"
+    default_instruction = f"Этот брифинг создан, чтобы упростить наше будущее сотрудничество и не займет много Вашего времени"
     if message.from_user.id in ADMIN_USER_IDS:
         if instructions:
             instr_text = f"{instructions.description if instructions else None}"
@@ -165,12 +182,11 @@ async def show_instruction(message: Message):
         return instr_text
     else:
         if instructions:
-            await message.answer(text=instructions.description, reply_markup=await kb.start_briefing())
+            await message.answer(text=instructions.description, reply_markup=kb.start_briefing)
         else:
             await message.answer(text=default_instruction, reply_markup=kb.start_briefing)
 
-@router.callback_query(F.data == "briefing")
-@router.message(F.text == "Пройти опрос")
+@router.message(F.text == "Брифинг")
 async def briefing_selected(message: Message):
     briefing = await get_briefing()
     briefing_list = []
@@ -195,46 +211,48 @@ async def briefing_selected(message: Message):
 @router.callback_query(F.data == "start_briefing")
 async def start_briefing(callback: CallbackQuery, state: FSMContext):
     await delete_user_briefing(callback.from_user.id)
-    await state.update_data(current_question_index=0, response=[])
+    await state.update_data(id=1, answer=[])
     await state.set_state(BriefingStates.question)
+    await callback.answer()
+    await send_next_question(callback.message, state)
 
 @router.message(BriefingStates.question)
-async def send_next_question(callback: CallbackQuery, state: FSMContext):
-    briefing = await get_briefing()
-    briefing_questions = briefing.scalars().all()
+async def send_next_question(message: Message, state: FSMContext):
     data = await state.get_data()
-    current_index = data['current_question_index']
-    if current_index < len(briefing_questions):
-        question = briefing_questions[current_index]
-        markup = kb.generate_answer(question.answer)
-            
-        await callback.message.answer(question.question, reply_markup=markup)
+    current_index = data['id']
+    try:
+        question = await get_question_by_id(current_index)
+        answers = await kb.generate_answer(current_index)  
+        await message.answer(question, reply_markup=answers)
         await state.set_state(BriefingStates.waiting_for_answer)
-    else:
-        await callback.message.answer("Брифинг завершен, спасибо за ваши ответы!", 
-                                          reply_markup=kb.briefing_finished())
+    except TypeError:
+        await message.answer("Брифинг завершен, спасибо за ваши ответы!",
+                                          reply_markup=kb.briefing_finished)
         await send_report()
+
         
 @router.message(BriefingStates.waiting_for_answer)
 async def briefing_answer_received(message: Message, state: FSMContext):
-    await state.update_data(response=message.text)
+    await state.update_data(answer=message.text)
     await message.answer(f"Ваш ответ: {message.text}", reply_markup=kb.in_briefing)
     
 @router.callback_query(F.data == 'continue')
-async def continue_briefing(state: FSMContext):
+async def continue_briefing(callback: CallbackQuery, state: FSMContext):
+    await callback.answer()
     data = await state.get_data()
-    await add_response(data)
-    next_index = data['current_question_index'] + 1
-    await state.update_data(current_question_index=next_index, response=[])
+    print(data)
+    await set_response(data)
+    next_index = data['id'] + 1
+    await state.update_data(id=next_index)
     await state.set_state(BriefingStates.question)
+    await send_next_question(callback.message, state)
 
 @router.callback_query(F.data == 'edit_answer')
-async def change_answer(state: FSMContext):
+async def change_answer(callback: CallbackQuery, state: FSMContext):
     data = await state.get_data()
-    await add_response(data)
-    next_index = data['current_question_index'] - 1
-    await state.update_data(current_question_index=next_index, response=[])
+    await state.update_data(id=data['id'], answer=[])
     await state.set_state(BriefingStates.question)
+    await send_next_question(callback.message, state)
   
 @router.callback_query(F.data =='restart_briefing')
 async def restart_briefing(callback: CallbackQuery, state: FSMContext):
@@ -245,7 +263,7 @@ async def restart_briefing(callback: CallbackQuery, state: FSMContext):
 async def preend_briefing(callback: CallbackQuery):
     await callback.message.edit_text(
         'Брифинг не завершён, ответы не будут сохранены. Если вы хотите продолжить, нажмите кнопку "Вернуться"',
-        reply_markup=kb.briefing_finished())
+        reply_markup=kb.end_briefing_selected)
 
 @router.callback_query(F.data == 'resume_briefing')
 async def resume_briefing(callback: CallbackQuery):
@@ -253,7 +271,7 @@ async def resume_briefing(callback: CallbackQuery):
 
 @router.callback_query(F.data =='end_briefing')
 async def finish_briefing_command(callback: CallbackQuery, state: FSMContext):
-    await callback.message.edit_text("Брифинг завершён, спасибо за участие.", reply_markup=kb.user_main)
+    await callback.message.edit_text("Брифинг завершён, спасибо за участие.", reply_markup=kb.briefing_finished)
     await state.set_state(BriefingStates.send_report)
     
 async def prepare_report(message: Message):
@@ -293,6 +311,18 @@ async def send_report(message: Message, state: FSMContext):
     else:
         for admin in ADMIN_USER_IDS:
             await message.answer(admin, f"<b>Заполненный брифинг от\n{user.username}:</b>\n\n{report}")
+        
+
+@router.callback_query(F.data.startswith("cancel_"))
+async def cancel_operation(callback: CallbackQuery, state: FSMContext):
+    user = callback.from_user.id
+    await callback.message.delete_reply_markup()
+    await state.clear()
+    await callback.answer("Операция отменена")
+    if user in ADMIN_USER_IDS:
+        await callback.message.answer(admin_hint, reply_markup=kb.admin_main)
+    else:
+        await callback.message.answer("Выберите вариант из меню ниже", reply_markup=kb.user_main)
         
 @router.message()
 async def echo(message: Message):

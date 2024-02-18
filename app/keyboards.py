@@ -1,15 +1,16 @@
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton
-from app.database.requests import (get_contacts, get_services, get_cases, 
+from app.database.requests import (get_contacts, get_services, get_cases, get_answer_by_id, 
                                    get_events, get_services)
-from aiogram.utils.keyboard import InlineKeyboardBuilder
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
+from aiogram.types import (ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton, InlineKeyboardMarkup,
+                           )
+
 
 
 user_main = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text='Контакты'), KeyboardButton(text='Кейсы')],
         [KeyboardButton(text='Мероприятия'), KeyboardButton(text='Услуги')],
-        [KeyboardButton(text='Пройти опрос')]],
+        [KeyboardButton(text='Брифинг')]],
     resize_keyboard=True,
     input_field_placeholder='Выберите действие',
     one_time_keyboard=True)
@@ -18,7 +19,7 @@ admin_main = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text='Контакты'), KeyboardButton(text='Кейсы')],
         [KeyboardButton(text='Мероприятия'), KeyboardButton(text='Услуги')],
-        [KeyboardButton(text='Пройти опрос'), KeyboardButton(text='Приветствие')]],
+        [KeyboardButton(text='Брифинг'), KeyboardButton(text='Приветствие')]],
     resize_keyboard=True,
     input_field_placeholder='Выберите действие',
     one_time_keyboard=True)
@@ -42,7 +43,7 @@ contacts = InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text='Удалить', callback_data='predelete_contact'),
             InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
 
-new_contacts = InlineKeyboardMarkup(inline_keyboard=[
+new_contact = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Добавить', callback_data='add_contact'),
             InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
 
@@ -50,15 +51,15 @@ confirm_delete_contacts = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Согласен', callback_data='delete_contacts'),
             InlineKeyboardButton(text='Отмена', callback_data='cancel_delete')]])
 
-new_cases = InlineKeyboardMarkup(inline_keyboard=[
+new_case = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Добавить', callback_data='add_case'),
             InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
 
-new_services = InlineKeyboardMarkup(inline_keyboard=[
+new_service = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Добавить', callback_data='add_service'),
             InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
 
-new_events = InlineKeyboardMarkup(inline_keyboard=[
+new_event = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Добавить', callback_data='add_event'),
             InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
 
@@ -78,7 +79,7 @@ create_briefing = InlineKeyboardMarkup(inline_keyboard=[
 
 in_create_briefing = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text='Добавить', callback_data='add_question'),
-        InlineKeyboardButton(text='Посмотреть', callback_data='briefing')],
+        InlineKeyboardButton(text='Посмотреть', callback_data='view_briefing')],
             [InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
 
 admin_get_briefing = InlineKeyboardMarkup(inline_keyboard=[
@@ -180,7 +181,13 @@ async def service_chosen_keyboard(service_id):
     InlineKeyboardButton(text='Удалить', callback_data=f'delete_service_{service_id}')],
     [InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
     return keyboard
-     
+
+async def order_service_keyboard(service_id):
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='Заказать', callback_data=f'order_service_{service_id}')],
+    [InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
+    return keyboard
+
 async def get_events_keyboard():
     events = await get_events()
     keyboard = InlineKeyboardBuilder()
@@ -219,14 +226,15 @@ async def enroll_user_keyboard(event_id):
     keyboard.add(InlineKeyboardButton(text='Назад', callback_data='to_main'))
     return keyboard.adjust(2).as_markup()
 
-def generate_answer(answers):
-    if len(answers) > 1:
-        answers = answers.split(";")
-        markup = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
-        for answer in answers:
-            markup.add(KeyboardButton(answer))
+async def generate_answer(line):
+    answers = await get_answer_by_id(line)
+    if ";" in answers:
+        buttons = [button.strip() for button in answers.split(';')]
+        keyboard = ReplyKeyboardBuilder()
+        for answer in buttons:
+            keyboard.add(KeyboardButton(text=answer))
+        return keyboard.adjust(1).as_markup(resize_keyboard=True, one_time_keyboard=True,
+                                            input_field_placeholder="Выберите ответ")
     else:
-        markup = None
-    return markup
-
+        return None
 
