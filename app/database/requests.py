@@ -16,6 +16,11 @@ async def get_users():
     async with async_session() as session:
         users = await session.scalars(select(Users))
         return users
+    
+async def get_user_by_tg(tg_id: int):
+    async with async_session() as session:
+        user = await session.scalar(select(Users).where(Users.tg_id == tg_id))
+        return user
 
 async def get_contacts():
     async with async_session() as session:
@@ -241,15 +246,28 @@ async def delete_welcome():
 
 async def set_response(data):
     async with async_session() as session:
-        await session.add(UserBriefing(**data))
+        session.add(UserBriefing(**data))
         await session.commit()
         
-async def delete_user_briefing(user_id):
+async def delete_user_briefing(tg_id):
     async with async_session() as session:
-        await session.execute(delete(UserBriefing).where(UserBriefing.user == user_id))
+        user = await session.scalar(select(Users.id).where(Users.tg_id == tg_id))
+        user_briefing = await session.execute(select(UserBriefing).where(UserBriefing.user == user))
+        for briefing in user_briefing.scalars().all():
+            await session.delete(briefing)
         await session.commit()
         
 async def get_user_briefing(user_id):
     async with async_session() as session:
-        user_briefing = await session.scalars(select(UserBriefing).where(UserBriefing.user == user_id))
+        user_id = await session.scalar(select(Users.id).where(Users.tg_id == user_id))
+        query = (
+            select(
+                UserBriefing.question,  # Связанный идентификатор вопроса из UserBriefing
+                Briefing.question,  # Описание вопроса из Briefing
+                UserBriefing.answer  # Ответ пользователя из UserBriefing
+            )
+            .join_from(UserBriefing, Briefing, UserBriefing.question == Briefing.id)  # JOIN с таблицей Briefing
+            .where(UserBriefing.user == user_id)  # Ограничение на основе user_id
+        )
+        user_briefing = await session.scalars(query).all()
         return user_briefing
