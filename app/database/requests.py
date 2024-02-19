@@ -17,6 +17,11 @@ async def get_users():
         users = await session.scalars(select(Users))
         return users
     
+async def get_user_by_id(user_id: int):
+    async with async_session() as session:
+        user = await session.scalar(select(Users).where(Users.id == user_id))
+        return user
+    
 async def get_user_by_tg(tg_id: int):
     async with async_session() as session:
         user = await session.scalar(select(Users).where(Users.tg_id == tg_id))
@@ -259,15 +264,14 @@ async def delete_user_briefing(tg_id):
         
 async def get_user_briefing(user_id):
     async with async_session() as session:
-        user_id = await session.scalar(select(Users.id).where(Users.tg_id == user_id))
         query = (
             select(
-                UserBriefing.question,  # Связанный идентификатор вопроса из UserBriefing
-                Briefing.question,  # Описание вопроса из Briefing
-                UserBriefing.answer  # Ответ пользователя из UserBriefing
+                Briefing.question.label('brief_question'),
+                UserBriefing.answer.label('brief_answer')
             )
-            .join_from(UserBriefing, Briefing, UserBriefing.question == Briefing.id)  # JOIN с таблицей Briefing
-            .where(UserBriefing.user == user_id)  # Ограничение на основе user_id
+            .join(Briefing, UserBriefing.question == Briefing.id)
+            .where(UserBriefing.user == user_id)
         )
-        user_briefing = await session.scalars(query).all()
-        return user_briefing
+        result = await session.execute(query)
+        return result.fetchall()
+

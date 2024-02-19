@@ -8,7 +8,7 @@ from aiogram.exceptions import TelegramForbiddenError
 from settings import ADMIN_USER_IDS, TOKEN
 import app.keyboards as kb
 from app.database.requests import (
-    get_welcome, get_contacts, set_user, get_cases, get_case_by_id, get_services, get_service_by_id, 
+    get_user_by_id, get_welcome, get_contacts, set_user, get_cases, get_case_by_id, get_services, get_service_by_id, 
     get_events, get_event_by_id, set_participant, get_briefing, get_instructions, set_response,
     delete_user_briefing, get_user_briefing, get_users, get_question_by_id, get_user_by_tg,
     )
@@ -232,10 +232,10 @@ async def start_briefing(callback: CallbackQuery, state: FSMContext):
     await state.update_data(user=user.id, question=0, answer=[])
     await state.set_state(BriefingStates.question)
     await callback.answer()
-    await send_next_question(callback.message, state, user_id)
+    await send_next_question(callback.message, state)
 
 @router.message(BriefingStates.question)
-async def send_next_question(message: Message, state: FSMContext, user_id):
+async def send_next_question(message: Message, state: FSMContext):
     data = await state.get_data()
     current_index = data['question'] + 1
     await state.update_data(question=current_index)
@@ -247,8 +247,7 @@ async def send_next_question(message: Message, state: FSMContext, user_id):
     except TypeError:
         await message.answer("Брифинг завершен, спасибо за ваши ответы!",
                                           reply_markup=kb.briefing_finished)
-        await state.clear()
-        await send_report(user_id)
+        await send_report(state)
 
         
 @router.message(BriefingStates.waiting_for_answer)
@@ -258,18 +257,17 @@ async def briefing_answer_received(message: Message, state: FSMContext):
     
 @router.callback_query(F.data == 'continue')
 async def continue_briefing(callback: CallbackQuery, state: FSMContext):
-    user_id = callback.from_user.id
     await callback.message.delete()
     data = await state.get_data()
     await state.update_data(answer=data['answer'])
     await set_response(data)
     await state.set_state(BriefingStates.question)
-    await send_next_question(callback.message, state, user_id)
+    await send_next_question(callback.message, state)
 
 @router.callback_query(F.data == 'edit_answer')
 async def change_answer(callback: CallbackQuery, state: FSMContext):
-    await state.set_state(BriefingStates.question)
     await callback.message.delete()
+    await state.set_state(BriefingStates.question)
     await send_next_question(callback.message, state)
   
 @router.callback_query(F.data =='restart_briefing')
@@ -290,11 +288,13 @@ async def resume_briefing(callback: CallbackQuery):
 @router.callback_query(F.data =='end_briefing')
 async def finish_briefing_command(callback: CallbackQuery, state: FSMContext):
     await callback.message.edit_text("Брифинг завершён, спасибо за участие.", reply_markup=kb.briefing_finished)
-    await send_report(callback.message)
+    await send_report(callback.message, state)
     
-async def prepare_report(user_id):
-    briefing_records = await get_user_briefing(user_id)
-    briefing_list = [f"{brief[0]} {brief[1]}\n{brief[2]}" for brief in briefing_records]
+async def prepare_report(state: FSMContext):
+    data = await state.get_data()
+    user = data['user']
+    briefing_records = await get_user_briefing(user)
+    briefing_list = [f"{brief[0]}\n{brief[1]}" for brief in briefing_records]
     briefing_text = "\n\n".join(briefing_list)
     parts = []
     while len(briefing_text) > 0:
@@ -306,12 +306,13 @@ async def prepare_report(user_id):
         briefing_text = briefing_text[cut_off + 2:]
     return parts
 
-async def send_report(user_id):
+async def send_report(state: FSMContext):
     bot = Bot(token=TOKEN, parse_mode='HTML')
-    report = await prepare_report(user_id)
-    user = await get_user_by_tg(user_id)
-    print(user_id)
-    username = user.username
+    data = await state.get_data()
+    user = data['user']
+    report = await prepare_report(state)
+    user_briefing = await get_user_by_id(user)
+    username = user_briefing.username
     if len(report) > 1:
         first_part = report[0]
         for admin in ADMIN_USER_IDS:
@@ -322,6 +323,7 @@ async def send_report(user_id):
     else:
         for admin in ADMIN_USER_IDS:
             await bot.send_message(chat_id=admin, text=f"<b>Заполненный брифинг от</b>\n@{username}:\n\n{report}")
+    await state.clear()
     await bot.session.close()
 
         
