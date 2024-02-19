@@ -194,27 +194,22 @@ async def briefing_selected(message: Message):
         answer = brief.answer if len(brief.answer) > 2 else "*Ответ в свободной форме*"
         briefing_list.append(f"{brief.id} {brief.question}\n{answer}")
     briefing_text = "\n".join(briefing_list)
+    
     if briefing_text:
         if message.from_user.id in ADMIN_USER_IDS:
             parts = []
-            current_part = ""
-            for chunk in briefing_text:
-                if len(chunk) + 1 < 4000:
-                        return chunk
+            while len(briefing_text) > 0:
+                cut_off = briefing_text.rfind("\n\n", 0, 4000)
+                if cut_off == -1 or len(briefing_text) <= 4000:
+                    parts.append(briefing_text)
+                    briefing_text = ""
                 else:
-                    last_double_newline = current_part.rfind("\n\n", 0, 4000)
-                    if last_double_newline != -1:
-                        parts.append(current_part[:last_double_newline])
-                        current_part = current_part[last_double_newline + 2:] + chunk + "\n"
-                    else:
-                        parts.append(current_part[:4000])
-                        current_part = current_part[4000:] + chunk + "\n"
-            if current_part:
-                parts.append(current_part)
+                    parts.append(briefing_text[:cut_off])
+                    briefing_text = briefing_text[cut_off + 2:]
             instructions = await show_instruction(message)
             await message.answer(f"<b>Инструкции:</b>\n{instructions}\n<b>Весь брифинг:</b>")
             for part in parts:
-                await message.answer(f"{part}", reply_markup=kb.admin_get_briefing)
+                await message.answer(part, reply_markup=kb.admin_get_briefing)
         else:
             await show_instruction(message)
     else:
@@ -223,7 +218,7 @@ async def briefing_selected(message: Message):
                                  reply_markup=kb.create_briefing)
         else:
             await message.answer("Брифинг отсутствует", reply_markup=kb.user_main)
-
+            
 @router.callback_query(F.data == "start_briefing")
 async def start_briefing(callback: CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
@@ -311,18 +306,16 @@ async def send_report(state: FSMContext):
     data = await state.get_data()
     user = data['user']
     report = await prepare_report(state)
+
     user_briefing = await get_user_by_id(user)
     username = user_briefing.username
     if len(report) > 1:
-        first_part = report[0]
-        for admin in ADMIN_USER_IDS:
-            await bot.send_message(chat_id=admin, text=f"<b>Заполненный брифинг от</b>\n@{username}:\n\n{first_part}")
-        for part in report[1:]:
+        for part in report:
             for admin in ADMIN_USER_IDS:
-                await bot.send_message(chat_id=admin, text=f"<b>Продолжение брифинга от</b>\n@{username}:\n\n{part}")
+                await bot.send_message(chat_id=admin, text=f"<b>Заполненный брифинг от</b>\n@{username}:\n\n{part}")
     else:
         for admin in ADMIN_USER_IDS:
-            await bot.send_message(chat_id=admin, text=f"<b>Заполненный брифинг от</b>\n@{username}:\n\n{report}")
+            await bot.send_message(chat_id=admin, text=f"<b>Заполненный брифинг от</b>\n@{username}:\n\n{report[0]}")
     await state.clear()
     await bot.session.close()
 
