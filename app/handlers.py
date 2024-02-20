@@ -174,6 +174,7 @@ async def event_detail_selected(callback: CallbackQuery):
         await callback.message.edit_text(event_for_admin, reply_markup=await kb.event_chosen_keyboard(event.id))
     else:
         await callback.message.edit_text(event_for_user, reply_markup=await kb.enroll_user_keyboard(event.id))
+    bot.session.close()
 
 @router.callback_query(F.data.startswith("enroll_"))
 async def enroll_user(callback: CallbackQuery):
@@ -266,7 +267,7 @@ async def send_next_question(message: Message, state: FSMContext):
     except TypeError:
         await message.answer("Брифинг завершен, спасибо за ваши ответы!",
                                           reply_markup=kb.briefing_finished)
-        await send_report(state)
+        await send_report(message, state)
         
 @router.message(BriefingStates.waiting_for_answer)
 async def briefing_answer_received(message: Message, state: FSMContext):
@@ -309,7 +310,7 @@ async def resume_briefing(callback: CallbackQuery, state: FSMContext):
 @router.callback_query(F.data =='end_briefing')
 async def finish_briefing_command(callback: CallbackQuery, state: FSMContext):
     await callback.message.edit_text("Брифинг завершён, спасибо за участие.", reply_markup=kb.briefing_finished)
-    await send_report(state)
+    await send_report(callback.message, state)
     
 async def prepare_report(state: FSMContext):
     data = await state.get_data()
@@ -330,12 +331,10 @@ async def prepare_report(state: FSMContext):
             briefing_text = briefing_text[cut_off:].strip()
     return parts
 
-async def send_report(state: FSMContext):
-    bot = Bot(token=TOKEN, parse_mode='HTML')
+async def send_report(message: Message, state: FSMContext):
     data = await state.get_data()
     user = data['user']
     report = await prepare_report(state)
-
     user_briefing = await get_user_by_id(user)
     username = user_briefing.username
     first_part = report[0]
@@ -343,16 +342,15 @@ async def send_report(state: FSMContext):
     if len(report) > 1:
         for admin in ADMIN_USER_IDS:
             try:
-                await bot.send_message(chat_id=admin, text=f"<b>Заполненный брифинг от</b>\n@{username}:\n\n{first_part}")
+                await message.bot.send_message(chat_id=admin, text=f"<b>Заполненный брифинг от</b>\n@{username}:\n\n{first_part}")
                 for part in left_parts:
-                    await bot.send_message(chat_id=admin, text=f"<b>Продолжение брифинга от</b>\n@{username}:\n\n{part}")
+                    await message.bot.send_message(chat_id=admin, text=f"<b>Продолжение брифинга от</b>\n@{username}:\n\n{part}")
             except TelegramForbiddenError:
-                pass   
+                print(f"Не удалось отправить уведомление админу {admin}")   
     else:
         for admin in ADMIN_USER_IDS:
-            await bot.send_message(chat_id=admin, text=f"<b>Заполненный брифинг от</b>\n@{username}:\n\n{report[0]}")
+            await message.bot.send_message(chat_id=admin, text=f"<b>Заполненный брифинг от</b>\n@{username}:\n\n{report[0]}")
     await state.clear()
-    await bot.session.close()
 
 @router.callback_query(F.data.startswith("cancel_"))
 async def cancel_operation(callback: CallbackQuery, state: FSMContext):
