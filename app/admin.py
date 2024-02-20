@@ -7,8 +7,6 @@ from aiogram.fsm.state import State, StatesGroup
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from aiogram.exceptions import TelegramForbiddenError
-import asyncio
-
 
 from settings import ADMIN_USER_IDS, TOKEN
 import app.keyboards as kb
@@ -16,7 +14,7 @@ from app.database.requests import (
 get_users, set_contact, get_contacts, delete_contacts, edit_contact, set_case, delete_case, edit_case,
 set_service, delete_service, edit_service, set_event, delete_event, edit_event, get_participants, 
 get_event_by_id, get_events, set_instructions, edit_instructions, delete_instructions, get_briefing,
-get_question_by_id, add_question, edit_question, get_welcome, set_welcome, edit_welcome, delete_welcome, 
+add_question, edit_question, get_welcome, set_welcome, edit_welcome, delete_welcome, 
 get_instructions, delete_briefing
 )
 
@@ -154,7 +152,7 @@ async def add_welcome_about(message: Message, state: FSMContext):
         reply_markup=kb.admin_main)
     
 @admin.callback_query(AdminProtect(), F.data == "edit_welcome")
-async def edit_welcome(callback: CallbackQuery, state: FSMContext):
+async def edit_welcome_selected(callback: CallbackQuery, state: FSMContext):
     await callback.message.delete_reply_markup()
     await callback.message.answer('Пришлите фото которое ещё лучше предыдущего', reply_markup=kb.cancel_action)
     await state.set_state(EditWelcome.picture)
@@ -406,14 +404,15 @@ async def add_event_title(message: Message, state: FSMContext):
 async def add_event_description(message: Message, state: FSMContext):
     await state.update_data(description=message.text)
     await state.set_state(AddEvent.date)
-    await message.answer('Введите дату события в формате ДД.ММ.ГГГГ ЧЧ:ММ', reply_markup=kb.cancel_action)
+    await message.answer(f'Введите дату события в формате\nДД.ММ.ГГГГ ЧЧ:ММ', reply_markup=kb.cancel_action)
     
 @admin.message(AdminProtect(), AddEvent.date)
 async def add_event_date(message: Message, state: FSMContext):
     try:
         date = datetime.strptime(message.text, '%d.%m.%Y %H:%M')
     except ValueError:
-        await message.answer('Неверный формат даты и времени. Пожалуйста, введите дату и время события в формате ДД.ММ.ГГГГ ЧЧ:ММ')
+        await message.answer(
+            'Неверный формат даты и времени. Пожалуйста, введите дату и время события в формате\nДД.ММ.ГГГГ ЧЧ:ММ')
         return
     else:
         if date < datetime.now() + timedelta(days=1):
@@ -430,7 +429,7 @@ async def add_event_date(message: Message, state: FSMContext):
 async def predelete_event_selected(callback: CallbackQuery):
     event_id = callback.data.split('_')[2]
     warning = "Это действие удалит мероприятие вместе со списком участников, но Вы можете просто изменить его"
-    await callback.answer(warning, reply_markup=await kb.confirm_delete_event_keyboard(event_id))
+    await callback.message.edit_text(warning, reply_markup=await kb.confirm_delete_event_keyboard(event_id))
     
 @admin.callback_query(AdminProtect(), F.data.startswith("delete_event_"))
 async def delete_event_selected(callback: CallbackQuery):
@@ -482,10 +481,18 @@ async def edit_event_date(message: Message, state: FSMContext):
             return
         await state.update_data(date=date)
         data = await state.get_data()
+        event_id = data['id']
+        await remove_old_reminders(event_id)
         await edit_event(data)
         await state.clear()
         await message.answer('Событие успешно изменено', reply_markup=await kb.admin_get_events_keyboard())
         await schedule_reminders()
+
+async def remove_old_reminders(event_id):
+    jobs = scheduler.get_jobs()
+    for job in jobs:
+        if job.args[0] == event_id:
+            scheduler.remove_job(job.id)
 
 @admin.callback_query(AdminProtect(), F.data.startswith("participants_"))
 async def check_participants(callback: CallbackQuery):
@@ -541,7 +548,7 @@ async def schedule_reminders():
                               run_date=event_time - timedelta(minutes=30),
                               args=(event.id,))
         evening_reminder_trigger = CronTrigger(hour=19, minute=0)
-        scheduler.add_job(send_admin_reminder, evening_reminder_trigger, args=(event.id))
+        scheduler.add_job(send_admin_reminder, evening_reminder_trigger, args=(event.id,))
     scheduler.start()
 
 @admin.callback_query(AdminProtect(), F.data == "instruction")
@@ -614,7 +621,8 @@ async def add_briefing_answer(message: Message, state: FSMContext):
 async def view_briefing(callback: CallbackQuery):
     briefing = await get_briefing()
     instructions = await get_instructions()
-    default_instruction = f"Этот брифинг создан, чтобы упростить наше будущее сотрудничество и не займет много Вашего времени"
+    default_instruction = (
+        "Этот брифинг создан, чтобы упростить наше будущее сотрудничество и не займет много Вашего времени")
     if instructions:
         instr_text = f"{instructions.description if instructions else None}"
     else:
@@ -625,13 +633,28 @@ async def view_briefing(callback: CallbackQuery):
         briefing_list.append(f"{brief.id} {brief.question}\n{answer}")
     briefing_text = "\n".join(briefing_list)
     if briefing_text:
-        await callback.message.answer(f"<b>Инструкции:</b>\n{instr_text}\n<b>Весь брифинг:</b>\n\n{briefing_text}",
-                                     reply_markup=kb.admin_get_briefing)
-
+        parts = []
+        while len(briefing_text) > 0:
+            if len(briefing_text) <= 4000:
+                parts.append(briefing_text)
+                briefing_text = ""
+            else:
+                cut_off = briefing_text.rfind("\n\n", 0, 4000)
+                if cut_off == -1:
+                    cut_off = 4000 - briefing_text[0:4001][::-1].find("\n")
+                parts.append(briefing_text[:cut_off])
+                briefing_text = briefing_text[cut_off:].strip()
+        await callback.message.answer(f"<b>Инструкции:</b>\n{instr_text}\n<b>Весь брифинг:</b>")
+        for part in parts:
+            await callback.message.answer(part)
+        await callback.message.answer("Выберите желаемое действие", reply_markup=kb.admin_get_briefing)
+    else:
+        await callback.message.edit_text(
+            f"<b>Инструкции:</b>\n{instr_text}\n\nА брифинг нужно создать. Сделаем это сейчас?", 
+            reply_markup=kb.create_briefing)    
+        
 @admin.callback_query(AdminProtect(), F.data == "add_question")
 async def add_question_to_briefing(callback: CallbackQuery, state: FSMContext):
-    await callback.message.edit_text('Давайте добавим ещё один вопрос')
-    await asyncio.sleep(1)
     await state.set_state(AddBriefing.question)
     await callback.message.edit_text('Введите текст вопроса', reply_markup=kb.cancel_action)
 
@@ -680,11 +703,16 @@ async def edit_question_answer(message: Message, state: FSMContext):
     await message.answer('Вопрос изменён. Хотите посмотреть что получилось или добавить ещё один?', 
                          reply_markup=kb.in_create_briefing)
 
-@admin.message(AdminProtect(), Command('newsletter'))
-@admin.callback_query(AdminProtect(), F.data == "newsletter")
+@admin.message(AdminProtect(), F.text == 'Сделать рассылку')
 async def newsletter(message: Message, state: FSMContext):
     await state.set_state(Newsletter.message)
     await message.answer('Отправьте сообщение, которое вы хотите разослать всем пользователям', 
+                         reply_markup=kb.cancel_action)
+
+@admin.callback_query(AdminProtect(), F.data == "newsletter")
+async def participants_newsletter(callback: CallbackQuery, state: FSMContext):
+    await state.set_state(Newsletter.message)
+    await callback.message.answer('Отправьте сообщение, которое вы хотите разослать всем пользователям', 
                          reply_markup=kb.cancel_action)
     
 @admin.message(AdminProtect(), Newsletter.message)
@@ -697,8 +725,6 @@ async def newsletter_message(message: Message, state: FSMContext):
             pass
     await message.answer('Рассылка успешно завершена.')
     await state.clear()
-    
-
     
 async def to_main(message: Message):
     await message.answer(admin_hint, reply_markup=kb.admin_main)

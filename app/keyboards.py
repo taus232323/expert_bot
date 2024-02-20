@@ -19,7 +19,8 @@ admin_main = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text='Контакты'), KeyboardButton(text='Кейсы')],
         [KeyboardButton(text='Мероприятия'), KeyboardButton(text='Услуги')],
-        [KeyboardButton(text='Брифинг'), KeyboardButton(text='Приветствие')]],
+        [KeyboardButton(text='Брифинг'), KeyboardButton(text='Приветствие')],
+        [KeyboardButton(text='Сделать рассылку')]],
     resize_keyboard=True,
     input_field_placeholder='Выберите действие',
     one_time_keyboard=True)
@@ -75,12 +76,16 @@ edit_instruction = InlineKeyboardMarkup(inline_keyboard=[
 create_briefing = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Создать', callback_data='create_briefing'),
             InlineKeyboardButton(text='Отмена', callback_data='cancel_action')],
-    [InlineKeyboardButton(text='Добавить инструкцию', callback_data='add_instruction')]])
+    [InlineKeyboardButton(text='Инструкция', callback_data='instruction')]])
 
 in_create_briefing = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text='Добавить', callback_data='add_question'),
         InlineKeyboardButton(text='Посмотреть', callback_data='view_briefing')],
             [InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
+
+choose_answer = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='Пропустить', callback_data='skip_answer'),
+            InlineKeyboardButton(text='Отмена', callback_data='cancel_action')]])
 
 admin_get_briefing = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Изменить', callback_data='edit_briefing'),
@@ -212,7 +217,7 @@ async def event_chosen_keyboard(event_id):
      InlineKeyboardButton(text="Участники", callback_data=f'participants_{event_id}')]])
     return keyboard
 
-async def confirm_delete_event(event_id):
+async def confirm_delete_event_keyboard(event_id):
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Подтверждаю', callback_data=f'delete_event_{event_id}')],
             [InlineKeyboardButton(text='Изменить', callback_data=f'edit_event_{event_id}'),

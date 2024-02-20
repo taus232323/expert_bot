@@ -1,7 +1,6 @@
 from app.database.models import (async_session, Users, Contacts, Events, Cases, Briefing, 
                                  Services, Participants, Instructions, Welcome, UserBriefing)
 from sqlalchemy import select, delete, update
-from typing import List
 from datetime import datetime
 
 
@@ -129,6 +128,7 @@ async def set_event(data):
 
 async def delete_event(event_id: int):
     async with async_session() as session:
+        await session.execute(delete(Participants).where(Participants.event == event_id))
         await session.execute(delete(Events).where(Events.id == event_id))
         await session.commit()
 
@@ -142,24 +142,19 @@ async def edit_event(data):
         await session.commit()
 
 async def set_participant(tg_id, event_id):
-    try:
-        async with async_session() as session:
-            user_id = await session.scalar(select(Users.id).where(Users.tg_id == tg_id))
-            if not user_id:
-                return None
-            participant = await session.scalar(select(Participants.id).where(
-                    Participants.user == user_id,
-                    Participants.event == event_id))
-            if not participant:
-                new_participant = Participants(user=user_id, event=event_id)
-                session.add(new_participant)
-                await session.commit()
-                return True
-            else:
-                return False
-    except Exception as e:
-        print(f"An error occured{e}")
-        return None    
+    async with async_session() as session:
+        user_id = await session.scalar(select(Users.id).where(Users.tg_id == tg_id))
+        event = await session.scalar(select(Events.id).where(Events.id == event_id))
+        participant = await session.scalar(select(Participants.id).where(
+                Participants.user == user_id,
+                Participants.event == event_id))
+        if not participant:
+            new_participant = Participants(user=user_id, event=event)
+            session.add(new_participant)
+            await session.commit()
+            return True
+        else:
+            return False 
         
 async def get_participants(event_id: int):
     async with async_session() as session:
@@ -218,7 +213,7 @@ async def edit_instructions(data):
     async with async_session() as session:
         await session.execute(
             update(Instructions).where(Instructions.id == 1).values({
-                Instructions.description: data['instructions']}))
+                Instructions.description: data['description']}))
         await session.commit()
         
 async def delete_instructions():
