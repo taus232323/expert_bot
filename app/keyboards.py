@@ -9,8 +9,8 @@ from aiogram.types import (ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardBu
 user_main = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text='📖Контакты'), KeyboardButton(text='💎Кейсы')],
-        [KeyboardButton(text='👏Мероприятия'), KeyboardButton(text='👍Услуги')],
-        [KeyboardButton(text='❓Брифинг❓')]],
+        [KeyboardButton(text='🗣Мероприятия'), KeyboardButton(text='👍Услуги')],
+        [KeyboardButton(text='❓Брифинг')]],
     resize_keyboard=True,
     input_field_placeholder='Выберите действие',
     one_time_keyboard=True)
@@ -18,8 +18,8 @@ user_main = ReplyKeyboardMarkup(
 admin_main = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text='📖Контакты'), KeyboardButton(text='💎Кейсы')],
-        [KeyboardButton(text='👏Мероприятия'), KeyboardButton(text='👍Услуги')],
-        [KeyboardButton(text='❓Брифинг❓Брифинг'), KeyboardButton(text='👋Приветствие')],
+        [KeyboardButton(text='🗣Мероприятия'), KeyboardButton(text='👍Услуги')],
+        [KeyboardButton(text='❓Брифинг'), KeyboardButton(text='👋Приветствие')],
         [KeyboardButton(text='✍Сделать рассылку')]],
     resize_keyboard=True,
     input_field_placeholder='Выберите действие',
@@ -145,11 +145,13 @@ async def get_cases_kb():
 async def admin_get_cases_kb():
     cases = await get_cases()
     keyboard = InlineKeyboardBuilder()
+    i = 0
     for case in cases:
-        keyboard.add(InlineKeyboardButton(text=💎{case.title}", callback_data=f'cases_{case.id}'))
+        keyboard.add(InlineKeyboardButton(text=f"💎{case.title}", callback_data=f'cases_{case.id}'))
+        i += 1
     keyboard.add(InlineKeyboardButton(text='✍Добавить кейс', callback_data='add_case'))
     keyboard.add(InlineKeyboardButton(text='⛔Отмена', callback_data='cancel_action'))
-    return keyboard.adjust(1).as_markup()
+    return keyboard.adjust(*[1] * i, 2).as_markup()
 
 async def case_chosen_kb(case_id):
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
@@ -169,11 +171,13 @@ async def get_services_kb():
 async def admin_get_services_keyboard():
     services = await get_services()
     keyboard = InlineKeyboardBuilder()
+    i = 0
     for service in services:
         keyboard.add(InlineKeyboardButton(text=f"👍{service.title}", callback_data=f'services_{service.id}'))
+        i += 1
     keyboard.add(InlineKeyboardButton(text='✍Добавить услугу', callback_data='add_service'),
                  InlineKeyboardButton(text='⛔Отмена', callback_data='cancel_action'))
-    return keyboard.adjust(1).as_markup()
+    return keyboard.adjust(*[1] * i, 2).as_markup()
 
 
 async def service_chosen_keyboard(service_id):
@@ -199,11 +203,13 @@ async def get_events_keyboard():
 async def admin_get_events_keyboard():
     events = await get_events()
     keyboard = InlineKeyboardBuilder()
+    i = 0
     for event in events:
         keyboard.add(InlineKeyboardButton(text=f"👏{event.title}", callback_data=f'events_{event.id}'))
+        i += 1
     keyboard.add(InlineKeyboardButton(text='✍Добавить мероприятие', callback_data='add_event'),
                  InlineKeyboardButton(text='⛔Отмена', callback_data='cancel_action'))
-    return keyboard.adjust(1).as_markup()
+    return keyboard.adjust(*[1] * i, 2).as_markup()
 
 async def event_chosen_keyboard(event_id):
     keyboard = InlineKeyboardMarkup(inline_keyboard=[

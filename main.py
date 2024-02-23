@@ -18,7 +18,10 @@ async def main():
     bot = Bot(token=TOKEN, parse_mode='HTML')
     dp = Dispatcher()
     dp.include_routers(admin, router)
+    
+    await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
+    
     await scheduler.start()
 
 

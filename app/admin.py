@@ -113,7 +113,7 @@ class EditBriefing(StatesGroup):
     answer = State()
     
     
-@admin.message(AdminProtect(), F.text == "Приветствие")    
+@admin.message(AdminProtect(), F.text.lower() == "👋приветствие")    
 async def welcome_selected(message: Message):
     welcome = await get_welcome()
     if welcome:
@@ -703,7 +703,7 @@ async def edit_question_answer(message: Message, state: FSMContext):
     await message.answer('Вопрос изменён. Хотите посмотреть что получилось или добавить ещё один?', 
                          reply_markup=kb.in_create_briefing)
 
-@admin.message(AdminProtect(), F.text == 'Сделать рассылку')
+@admin.message(AdminProtect(), F.text.lower() == '✍сделать рассылку')
 async def newsletter(message: Message, state: FSMContext):
     await state.set_state(Newsletter.message)
     await message.answer('Отправьте сообщение, которое вы хотите разослать всем пользователям', 
@@ -717,13 +717,13 @@ async def participants_newsletter(callback: CallbackQuery, state: FSMContext):
     
 @admin.message(AdminProtect(), Newsletter.message)
 async def newsletter_message(message: Message, state: FSMContext):
-    await message.answer('Подождите... идёт рассылка.')
+    await message.answer('Подождите... идёт рассылка🔊.')
     for user in await get_users():
         try:
             await message.send_copy(chat_id=user.tg_id)
         except:
             pass
-    await message.answer('Рассылка успешно завершена.')
+    await message.answer('Рассылка успешно завершена✔.')
     await state.clear()
     
 async def to_main(message: Message):
