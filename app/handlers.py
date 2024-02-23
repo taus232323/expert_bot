@@ -4,8 +4,7 @@ from aiogram.filters import CommandStart, CommandObject
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.exceptions import TelegramForbiddenError
-from aiogram.utils.deep_linking import create_start_link
-from aiogram.utils.deep_linking import decode_payload
+from aiogram.utils.deep_linking import create_start_link, decode_payload
 
 
 from settings import ADMIN_USER_IDS, TOKEN
@@ -16,7 +15,7 @@ from app.database.requests import (
     delete_user_briefing, get_user_briefing, get_question_by_id, get_user_by_tg,
     )
 
-admin_hint = "Нажмите на кнопку в меню для просмотра, добавления или изменения информации"
+admin_hint = "Нажмите на кнопку в меню для просмотра, добавления или изменения информации👇"
 
 
 class BriefingStates(StatesGroup):
@@ -43,18 +42,18 @@ async def cmd_start(message: Message, command: CommandObject):
         payload = decode_payload(args)
         await enroll_user_from_deep_link(message, user_id, payload)
         if not welcome:
-            await message.answer(f"Добро пожаловать, {message.from_user.first_name}! Выберите вариант из меню ниже", 
-                             reply_markup=kb.user_main)
+            await message.answer(f"Добро пожаловать, {message.from_user.first_name}!👋"
+                "Выберите вариант из меню ниже👇", reply_markup=kb.user_main)
         else:
             await message.answer_photo(welcome.picture, welcome.about)
-            await message.answer("Выберите вариант из меню ниже", reply_markup=kb.user_main)
+            await message.answer("Выберите вариант из меню ниже👇", reply_markup=kb.user_main)
         
 async def enroll_user_from_deep_link(message: Message, tg_id, event_id):
     event = await get_event_by_id(event_id)
     formatted_date = event.date.strftime('%Y-%m-%d %H:%M')
     event_details = f"\n<b>{event.title}</b>.\nДата и время события: \n<b>{formatted_date}</b>"
-    success_message = f"Вы успешно записаны на:{event_details}"
-    is_in_event = f"Вы уже записаны на:{event_details}"
+    success_message = f"✅Вы успешно записаны на:{event_details}"
+    is_in_event = f"✳Вы уже записаны на:{event_details}"
     participant_added = await set_participant(tg_id=tg_id, event_id=event_id)
     if participant_added is True:
         await message.answer(success_message, reply_markup=kb.user_main)
@@ -64,7 +63,7 @@ async def enroll_user_from_deep_link(message: Message, tg_id, event_id):
 @router.callback_query(F.data == "to_main")        
 async def to_main(callback: CallbackQuery):
     await callback.message.delete()
-    await callback.message.answer(f"Выберите вариант из меню ниже", reply_markup=kb.user_main)
+    await callback.message.answer(f"Выберите вариант из меню ниже👇", reply_markup=kb.user_main)
 
 @router.message(F.text == "Контакты")
 async def contact_selected(message: Message):
@@ -72,13 +71,13 @@ async def contact_selected(message: Message):
     contact_info = "\n".join([f"{contact.contact_type}: {contact.value}" for contact in contacts])
     if len(contact_info) < 2:
         if message.from_user.id in ADMIN_USER_IDS:
-            await message.answer("Вы ещё не добавили ни одного контакта", reply_markup=kb.new_contact)
+            await message.answer("❌Вы ещё не добавили ни одного контакта", reply_markup=kb.new_contact)
         else:
-            await message.answer("Контактная информация отсутствует")
+            await message.answer("❌Контактная информация отсутствует")
     else:
-        await message.answer(f"<b>Моя контактная информация и график работы:</b>\n{contact_info}")
+        await message.answer(f"<b>📖Моя контактная информация и график работы:</b>\n{contact_info}")
         if message.from_user.id in ADMIN_USER_IDS:
-            await message.answer("Выберите желаемую опцию:", reply_markup=kb.contacts)
+            await message.answer("Выберите желаемую опцию:👇", reply_markup=kb.contacts)
    
 @router.message(F.text == "Кейсы")
 async def cases_selected(message: Message):
@@ -86,12 +85,12 @@ async def cases_selected(message: Message):
     cases_list = "\n".join([f"{case.title}" for case in cases])
     if len(cases_list) < 1:
         if message.from_user.id in ADMIN_USER_IDS:
-            await message.answer("Вы ещё не добавили ни одного кейса", reply_markup=kb.new_case)
+            await message.answer("❌Вы ещё не добавили ни одного кейса", reply_markup=kb.new_case)
         else:
-            await message.answer("Кейсы отсутствуют")
+            await message.answer("❌Кейсы отсутствуют")
     else:
         if message.from_user.id in ADMIN_USER_IDS:
-            await message.answer("Выберите кейс для изменения/удаления или добавьте новый", 
+            await message.answer("Выберите кейс для изменения/удаления или добавьте новый👇", 
                              reply_markup=await kb.admin_get_cases_kb())
         else:    
             await message.answer("Мои самые лучшие кейсы:", reply_markup=await kb.get_cases_kb())
@@ -111,12 +110,12 @@ async def service_selected(message: Message):
     services_list = "\n".join([f"{service.title}" for service in services])
     if len(services_list) < 2:
         if message.from_user.id in ADMIN_USER_IDS:
-            await message.answer("Вы ещё не добавили ни одной услуги", reply_markup=kb.new_service)
+            await message.answer("❌Вы ещё не добавили ни одной услуги", reply_markup=kb.new_service)
         else:
-            await message.answer("Услуги отсутствуют")
+            await message.answer("❌Услуги отсутствуют")
     else:
         if message.from_user.id in ADMIN_USER_IDS:
-            await message.answer("Выберите услугу для изменения/удаления или добавьте новую",
+            await message.answer("Выберите услугу для изменения/удаления или добавьте новую👇",
                              reply_markup=await kb.admin_get_services_keyboard())
         else:
             await message.answer("Мои самые выгодные услуги:", reply_markup=await kb.get_services_kb())
@@ -132,15 +131,15 @@ async def service_detail_selected(callback: CallbackQuery):
                                          reply_markup=await kb.order_service_keyboard(service.id))
         
 @router.callback_query(F.data.startswith("order_service_"))
-async def order_service(callback: CallbackQuery):
+async def order_service(callback: CallbackQuery, bot: Bot):
     service = await get_service_by_id(callback.data.split("_")[2])
     user = callback.from_user.username
     await callback.message.edit_text(
-        f"Вы заказали услугу <b>{service.title}</b>. Я Вам напишу в самое ближайшее время")
+        f"🤝Вы заказали услугу <b>{service.title}</b>. Я Вам напишу в самое ближайшее время☝")
     for admin in ADMIN_USER_IDS:
         try:
-            await callback.message.send_copy(chat_id=admin, 
-                text=f"Заказ услуги {service.title} от @{user}. Этот клиент очень хочет, чтобы Вы ему написали")
+            await bot.send_message(chat_id=admin, 
+                text=f"👍Заказ услуги {service.title} от @{user}. Этот клиент очень хочет, чтобы Вы ему написали🙏")
         except TelegramForbiddenError:
             print(f"Не удалось отправить сообщение админу @{admin}")
                
@@ -150,15 +149,15 @@ async def event_selected(message: Message):
     events_list = "\n".join([f"{event.title}" for event in events])
     if len(events_list) < 2:
         if message.from_user.id in ADMIN_USER_IDS:
-            await message.answer("Вы ещё не добавили ни одного мероприятия", reply_markup=kb.new_event)
+            await message.answer("❌Вы ещё не добавили ни одного мероприятия", reply_markup=kb.new_event)
         else:
-            await message.answer("Мероприятия отсутствуют")
+            await message.answer("❌Мероприятия отсутствуют")
     else:
         if message.from_user.id in ADMIN_USER_IDS:
-            await message.answer("Выберите мероприятие для изменения/удаления или добавьте новое",
+            await message.answer("Выберите мероприятие для изменения/удаления или добавьте новое👇",
                              reply_markup=await kb.admin_get_events_keyboard())
         else:
-            await message.answer("Мои самые интересные мероприятия:", reply_markup=await kb.get_events_keyboard())
+            await message.answer("👀Мои самые интересные мероприятия:", reply_markup=await kb.get_events_keyboard())
     
 @router.callback_query(F.data.startswith("events_"))
 async def event_detail_selected(callback: CallbackQuery):
@@ -168,7 +167,7 @@ async def event_detail_selected(callback: CallbackQuery):
     formatted_date = event.date.strftime('%Y-%m-%d %H:%M')
     deep_link = await create_start_link(bot, event_id, encode=True)
     event_for_admin = (f"<b>{event.title}</b>\n\n{event.description}\n\n<b>{formatted_date}</b>\n\n"
-        f"Ссылка на событие: {deep_link}")
+        f"🌐Ссылка на событие: {deep_link}")
     event_for_user = (f"<b>{event.title}</b>\n\n{event.description}\n\n<b>{formatted_date}</b>\n\n")
     if callback.from_user.id in ADMIN_USER_IDS:
         await callback.message.edit_text(event_for_admin, reply_markup=await kb.event_chosen_keyboard(event.id))
@@ -183,8 +182,8 @@ async def enroll_user(callback: CallbackQuery):
     tg_id = callback.from_user.id
     formatted_date = event.date.strftime('%Y-%m-%d %H:%M')
     event_details = f"\n<b>{event.title}</b>.\nДата и время события: \n<b>{formatted_date}</b>"
-    success_message = f"Вы успешно записаны на:{event_details}"
-    is_in_event = f"Вы уже записаны на:{event_details}"
+    success_message = f"✅Вы успешно записаны на:{event_details}"
+    is_in_event = f"☑Вы уже записаны на:{event_details}"
     participant_added = await set_participant(tg_id=tg_id, event_id=event_id)
     if participant_added is True:
         await callback.message.delete()
@@ -231,15 +230,15 @@ async def briefing_selected(message: Message):
                     parts.append(briefing_text[:cut_off])
                     briefing_text = briefing_text[cut_off:].strip()
             instructions = await show_instruction(message)
-            await message.answer(f"<b>Инструкции:</b>\n{instructions}\n<b>Весь брифинг:</b>")
+            await message.answer(f"<b>❗Инструкции❗:</b>\n{instructions}\n<b>Весь брифинг:</b>")
             for part in parts:
                 await message.answer(part)
-            await message.answer("Выберите желаемое действие", reply_markup=kb.admin_get_briefing)
+            await message.answer("Выберите желаемое действие👇", reply_markup=kb.admin_get_briefing)
         else:
             await show_instruction(message)
     else:
         if message.from_user.id in ADMIN_USER_IDS:
-            await message.answer("Вы ещё не создали брифинг. Можем это сделать прямо сейчас", 
+            await message.answer("❌Вы ещё не создали брифинг. Можем это сделать прямо сейчас😉", 
                                  reply_markup=kb.create_briefing)
         else:
             await message.answer("Брифинг отсутствует", reply_markup=kb.user_main)
@@ -265,7 +264,7 @@ async def send_next_question(message: Message, state: FSMContext):
         await message.answer(question, reply_markup=answers)
         await state.set_state(BriefingStates.waiting_for_answer)
     except TypeError:
-        await message.answer("Брифинг завершен, спасибо за ваши ответы!",
+        await message.answer("Брифинг завершен, спасибо за ваши ответы!🤝",
                                           reply_markup=kb.briefing_finished)
         await send_report(message, state)
         
@@ -298,7 +297,7 @@ async def restart_briefing(callback: CallbackQuery, state: FSMContext):
 @router.callback_query(F.data == 'preend_briefing')
 async def preend_briefing(callback: CallbackQuery):
     await callback.message.edit_text(
-        'Брифинг не завершён, ответы не будут сохранены. Если вы хотите продолжить, нажмите кнопку "Вернуться"',
+        '❗Брифинг не завершён, ответы не будут сохранены. Если вы хотите продолжить, нажмите кнопку "Вернуться"',
         reply_markup=kb.end_briefing_selected)
 
 @router.callback_query(F.data == 'resume_briefing')
@@ -309,7 +308,7 @@ async def resume_briefing(callback: CallbackQuery, state: FSMContext):
 
 @router.callback_query(F.data =='end_briefing')
 async def finish_briefing_command(callback: CallbackQuery, state: FSMContext):
-    await callback.message.edit_text("Брифинг завершён, спасибо за участие.", reply_markup=kb.briefing_finished)
+    await callback.message.edit_text("Брифинг завершён, спасибо за участие🤝", reply_markup=kb.briefing_finished)
     await send_report(callback.message, state)
     
 async def prepare_report(state: FSMContext):
@@ -342,14 +341,17 @@ async def send_report(message: Message, state: FSMContext):
     if len(report) > 1:
         for admin in ADMIN_USER_IDS:
             try:
-                await message.bot.send_message(chat_id=admin, text=f"<b>Заполненный брифинг от</b>\n@{username}:\n\n{first_part}")
+                await message.bot.send_message(
+                    chat_id=admin, text=f"<b>☑☑☑Заполненный брифинг от☑☑☑</b>\n@{username}:\n\n{first_part}")
                 for part in left_parts:
-                    await message.bot.send_message(chat_id=admin, text=f"<b>Продолжение брифинга от</b>\n@{username}:\n\n{part}")
+                    await message.bot.send_message(
+                        chat_id=admin, text=f"<b>✔✔✔Продолжение брифинга от✔✔✔</b>\n@{username}:\n\n{part}")
             except TelegramForbiddenError:
-                print(f"Не удалось отправить уведомление админу {admin}")   
+                print(f"❌Не удалось отправить уведомление админу {admin}")   
     else:
         for admin in ADMIN_USER_IDS:
-            await message.bot.send_message(chat_id=admin, text=f"<b>Заполненный брифинг от</b>\n@{username}:\n\n{report[0]}")
+            await message.bot.send_message(
+                chat_id=admin, text=f"<b>☑☑☑Заполненный брифинг от☑☑☑</b>\n@{username}:\n\n{report[0]}")
     await state.clear()
 
 @router.callback_query(F.data.startswith("cancel_"))
@@ -361,9 +363,9 @@ async def cancel_operation(callback: CallbackQuery, state: FSMContext):
     if user in ADMIN_USER_IDS:
         await callback.message.answer(admin_hint, reply_markup=kb.admin_main)
     else:
-        await callback.message.answer("Выберите вариант из меню ниже", reply_markup=kb.user_main)
+        await callback.message.answer("Выберите вариант из меню ниже👇", reply_markup=kb.user_main)
         
 @router.message()
 async def echo(message: Message):
-    await message.answer(f"Я не понимаю, что вы хотите")
+    await message.answer("Я не понимаю, что вы хотите⁉")
     
