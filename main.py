@@ -1,4 +1,4 @@
-# версия 1.0
+# версия 1.1
 from aiogram import Bot, Dispatcher
 import asyncio
 import logging
