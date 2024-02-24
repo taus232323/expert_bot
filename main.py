@@ -1,4 +1,4 @@
-# версия 1.1
+# версия 1.2
 from aiogram import Bot, Dispatcher
 import asyncio
 import logging
@@ -11,6 +11,10 @@ from settings import TOKEN
 
 
 scheduler = AsyncIOScheduler()
+
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',filemode='w',
+    level=logging.ERROR, filename='bot.log')
 
 async def main():
     await async_main()
