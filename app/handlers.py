@@ -87,7 +87,8 @@ async def contact_selected(message: Message):
         else:
             await message.answer("❌Контактная информация отсутствует")
     else:
-        await message.answer(f"<b>📖Моя контактная информация и график работы:</b>\n{contact_info}")
+        await message.answer(f"<b>📖Моя контактная информация и график работы:</b>\n{contact_info}",
+                             reply_markup=kb.user_main)
         if message.from_user.id in ADMIN_USER_IDS:
             await message.answer("Выберите желаемую опцию:👇", reply_markup=kb.contacts)
    
@@ -99,7 +100,7 @@ async def cases_selected(message: Message):
         if message.from_user.id in ADMIN_USER_IDS:
             await message.answer("❌Вы ещё не добавили ни одного кейса", reply_markup=kb.new_case)
         else:
-            await message.answer("❌Кейсы отсутствуют")
+            await message.answer("❌Кейсы отсутствуют", reply_markup=kb.user_main)
     else:
         if message.from_user.id in ADMIN_USER_IDS:
             await message.answer("Выберите кейс для изменения/удаления или добавьте новый👇", 
@@ -124,7 +125,7 @@ async def service_selected(message: Message):
         if message.from_user.id in ADMIN_USER_IDS:
             await message.answer("❌Вы ещё не добавили ни одной услуги", reply_markup=kb.new_service)
         else:
-            await message.answer("❌Услуги отсутствуют")
+            await message.answer("❌Услуги отсутствуют", reply_markup=kb.user_main)
     else:
         if message.from_user.id in ADMIN_USER_IDS:
             await message.answer("Выберите услугу для изменения/удаления или добавьте новую👇",
@@ -163,7 +164,7 @@ async def event_selected(message: Message):
         if message.from_user.id in ADMIN_USER_IDS:
             await message.answer("❌Вы ещё не добавили ни одного мероприятия", reply_markup=kb.new_event)
         else:
-            await message.answer("❌Мероприятия отсутствуют")
+            await message.answer("❌Мероприятия отсутствуют", reply_markup=kb.user_main)
     else:
         if message.from_user.id in ADMIN_USER_IDS:
             await message.answer("Выберите мероприятие для изменения/удаления или добавьте новое👇",
@@ -350,11 +351,12 @@ async def send_report(message: Message, state: FSMContext):
     username = user_briefing.username
     first_part = report[0]
     left_parts = report[1:]
+    await state.clear()
     if len(report) > 1:
         for admin in ADMIN_USER_IDS:
             try:
                 await message.bot.send_message(
-                    chat_id=admin, text=f"<b>☑☑☑Заполненный брифинг от☑☑☑</b>\n@{username}:\n\n{first_part}")
+                    chat_id=admin, text=f"<b>✅✅✅Заполненный брифинг от✅✅✅</b>\n@{username}:\n\n{first_part}")
                 for part in left_parts:
                     await message.bot.send_message(
                         chat_id=admin, text=f"<b>✔✔✔Продолжение брифинга от✔✔✔</b>\n@{username}:\n\n{part}")
@@ -363,8 +365,7 @@ async def send_report(message: Message, state: FSMContext):
     else:
         for admin in ADMIN_USER_IDS:
             await message.bot.send_message(
-                chat_id=admin, text=f"<b>☑☑☑Заполненный брифинг от☑☑☑</b>\n@{username}:\n\n{report[0]}")
-    await state.clear()
+                chat_id=admin, text=f"<b>✅✅✅Заполненный брифинг от✅✅✅</b>\n@{username}:\n\n{report[0]}")
 
 @router.callback_query(F.data.startswith("cancel_"))
 async def cancel_operation(callback: CallbackQuery, state: FSMContext):
