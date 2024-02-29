@@ -1,6 +1,6 @@
 from app.database.models import (async_session, Users, Contacts, Events, Cases, Briefing, 
                                  Services, Participants, Instructions, Welcome, UserBriefing)
-from sqlalchemy import select, delete, update
+from sqlalchemy import select, delete, update, func
 from datetime import datetime
 
 
@@ -15,6 +15,11 @@ async def get_users():
     async with async_session() as session:
         users = await session.scalars(select(Users))
         return users
+    
+async def get_max_user_id() -> int:
+    async with async_session() as session:
+        max_id = await session.scalar(select(func.max(Users.id)))
+    return max_id
     
 async def get_user_by_id(user_id: int):
     async with async_session() as session:

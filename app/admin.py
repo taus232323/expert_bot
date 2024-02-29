@@ -15,11 +15,13 @@ get_users, set_contact, get_contacts, delete_contacts, edit_contact, set_case, d
 set_service, delete_service, edit_service, set_event, delete_event, edit_event, get_participants, 
 get_event_by_id, get_events, set_instructions, edit_instructions, delete_instructions, get_briefing,
 add_question, edit_question, get_welcome, set_welcome, edit_welcome, delete_welcome, 
-get_instructions, delete_briefing
+get_instructions, delete_briefing, get_max_user_id
 )
 
 admin = Router()
 scheduler = AsyncIOScheduler()
+
+
 
 contact_type_hint = (
 "Введите тип контактной информации. Например: Фамилия Имя Отчество; Телефон; Адрес; График "
@@ -708,7 +710,12 @@ async def edit_question_answer(message: Message, state: FSMContext):
 
 @admin.message(AdminProtect(), F.text.lower() == '✍сделать рассылку')
 async def newsletter(message: Message, state: FSMContext):
+    max_id = await get_max_user_id()
     await state.set_state(Newsletter.message)
+    await message.answer(f'☝️ Количество подписчиков бота: {max_id}')
+    with open('app/newsletter_hint.txt', 'r', encoding='utf-8') as text:
+        newsletter_hint = text.read()
+    await message.answer(newsletter_hint)
     await message.answer('Отправьте сообщение, которое вы хотите разослать всем пользователям', 
                          reply_markup=kb.cancel_action)
 
