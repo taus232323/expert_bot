@@ -532,6 +532,8 @@ async def send_admin_reminder(event_id):
     await bot.session.close()
 
 async def schedule_reminders():
+    if scheduler.running:
+        scheduler.shutdown(wait=False)
     upcoming_events = await get_events()
     for event in upcoming_events:
         event_time = event.date
@@ -547,10 +549,11 @@ async def schedule_reminders():
             scheduler.add_job(send_admin_reminder, 'date',
                               run_date=event_time - timedelta(minutes=30),
                               args=(event.id,))
-        evening_reminder_trigger = CronTrigger(hour=19, minute=0)
+        evening_reminder_trigger = CronTrigger(hour=14, minute=45)
         scheduler.add_job(send_admin_reminder, evening_reminder_trigger, args=(event.id,))
-    scheduler.start()
-
+    if not scheduler.running:
+        scheduler.start()
+        
 @admin.callback_query(AdminProtect(), F.data == "instruction")
 async def instruction(callback: CallbackQuery):
     instructions = await get_instructions()

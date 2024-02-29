@@ -186,7 +186,7 @@ async def event_detail_selected(callback: CallbackQuery):
         await callback.message.edit_text(event_for_admin, reply_markup=await kb.event_chosen_keyboard(event.id))
     else:
         await callback.message.edit_text(event_for_user, reply_markup=await kb.enroll_user_keyboard(event.id))
-    bot.session.close()
+    await bot.session.close()
 
 @router.callback_query(F.data.startswith("enroll_"))
 async def enroll_user(callback: CallbackQuery):

@@ -6,11 +6,10 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from app.database.models import async_main
 from app.handlers import router
-from app.admin import admin
+from app.admin import admin, schedule_reminders, scheduler
 from settings import TOKEN
 
 
-scheduler = AsyncIOScheduler()
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',filemode='w',
@@ -26,8 +25,8 @@ async def main():
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
     
-    await scheduler.start()
-
+    await schedule_reminders()
+    
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
