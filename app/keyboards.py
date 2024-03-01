@@ -20,7 +20,7 @@ admin_main = ReplyKeyboardMarkup(
         [KeyboardButton(text='📖Контакты'), KeyboardButton(text='💎Кейсы')],
         [KeyboardButton(text='🗣Мероприятия'), KeyboardButton(text='👍Услуги')],
         [KeyboardButton(text='❓Брифинг'), KeyboardButton(text='👋Приветствие')],
-        [KeyboardButton(text='✍Сделать рассылку')]],
+        [KeyboardButton(text='✍Рассылка'), KeyboardButton(text='🛒Подписка')]],
     resize_keyboard=True,
     input_field_placeholder='Выберите действие',
     one_time_keyboard=True)

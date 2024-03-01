@@ -20,7 +20,7 @@ get_instructions, delete_briefing, get_max_user_id
 
 admin = Router()
 scheduler = AsyncIOScheduler()
-
+days_remaining = 30
 
 
 contact_type_hint = (
@@ -707,7 +707,7 @@ async def edit_question_answer(message: Message, state: FSMContext):
     await state.clear()
     await message.answer('Вопрос изменён. Хотите посмотреть что получилось или добавить ещё один?', 
                          reply_markup=kb.in_create_briefing)
-
+    
 @admin.message(AdminProtect(), F.text.lower() == '✍сделать рассылку')
 async def newsletter(message: Message, state: FSMContext):
     max_id = await get_max_user_id()
@@ -716,13 +716,7 @@ async def newsletter(message: Message, state: FSMContext):
         newsletter_hint = text.read()
     await message.answer(newsletter_hint)
     await message.answer(
-        f'Сейчас в вашей базе <b>{max_id} пользователь(-ей)</b>\nОтправьте сообщение, которое вы хотите им отправить', 
-                         reply_markup=kb.cancel_action)
-
-@admin.callback_query(AdminProtect(), F.data == "newsletter")
-async def participants_newsletter(callback: CallbackQuery, state: FSMContext):
-    await state.set_state(Newsletter.message)
-    await callback.message.answer('Отправьте сообщение, которое вы хотите разослать всем пользователям', 
+        f'Сейчас пользовательей в Вашей базе: <b>{max_id}</b>\nОтправьте сообщение, которое вы хотите им разослать', 
                          reply_markup=kb.cancel_action)
     
 @admin.message(AdminProtect(), Newsletter.message)
@@ -744,4 +738,22 @@ async def newsletter_message(message: Message, state: FSMContext):
     
 async def to_main(message: Message):
     await message.answer(admin_hint, reply_markup=kb.admin_main)
+    
+# async def decrease_counter():
+#     global days_remaining
+#     if days_remaining > 0:
+#         days_remaining -= 1
+#     else:
+#         ADMIN_USER_IDS = ADMIN_USER_IDS[:2]
+    
+# async def start_rent_counter(message: Message):
+#     msg = await message.answer(f"Оплачено дней аренды: {days_remaining}")
+#     message_id = msg.message_id
+#     await message.pin()
+#     scheduler.add_job(decrease_counter, 'cron', hour=0)
+#     try:
+#         await message.edit_text(message_id=message_id, text=f"Оплачено дней аренды: {days_remaining}")
+#     except Exception as e:
+#         print(f"Ошибка при обновлении счётчика: {e}")
+#     scheduler.start()
     

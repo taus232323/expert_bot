@@ -7,8 +7,9 @@ from aiogram.exceptions import TelegramForbiddenError
 from aiogram.utils.deep_linking import create_start_link, decode_payload
 
 
-from settings import ADMIN_USER_IDS, TOKEN
+from settings import ADMIN_USER_IDS, TOKEN, SUPER_ADMIN_USER_IDS
 import app.keyboards as kb
+from app.admin import start_rent_counter
 from app.database.requests import (
     get_user_by_id, get_welcome, get_contacts, set_user, get_cases, get_case_by_id, get_services, get_service_by_id, 
     get_events, get_event_by_id, set_participant, get_briefing, get_instructions, set_response,
@@ -43,15 +44,18 @@ async def cmd_start(message: Message, command: CommandObject):
         await message.answer("Выберите вариант из меню ниже👇", reply_markup=kb.user_main)
                 
 @router.message(CommandStart())
-async def cmd_start(message: Message, command: CommandObject):
+async def cmd_start(message: Message):
     welcome = await get_welcome()
     user_id = message.from_user.id
     if isinstance(message, Message):
         await set_user(user_id, message.from_user.username)
     if message.from_user.id in ADMIN_USER_IDS:
+        await start_rent_counter(message)
         await message.answer(f"👋Добро пожаловать, администратор {message.from_user.first_name}! "
         "Нажмите на кнопку в меню для просмотра, добавления или изменения информации👇",
             reply_markup=kb.admin_main)
+    elif message.from_user.id in SUPER_ADMIN_USER_IDS:
+        await message.answer(f"👋Добро пожаловать, супер администратор {message.from_user.first_name}!")
     else:
         if not welcome:
             await message.answer(f"👋Добро пожаловать, {message.from_user.first_name}!"
