@@ -18,12 +18,6 @@ paid_days = 30
 class UpRent(StatesGroup):
     rent_days = State()
 
-
-class IsSuperAdmin(Filter):
-    async def __call__(self, message: Message):
-        return message.from_user.id in SUPER_ADMIN_USER_IDS
-    
-
 @superadmin.message(IsSuperAdmin(), Command(commands=["rent"]))
 async def rent(message: Message, state: FSMContext):
     await message.answer('На сколько дней продлить аренду этого бота?')
@@ -39,7 +33,9 @@ async def update_rent(message: Message, state: FSMContext):
     days_remaining += days
     
     
-
+@router.message()
+async def echo(message: Message):
+    await message.answer("Я не понимаю, что вы хотите🤷‍♂️")
     
     
 

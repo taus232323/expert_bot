@@ -1,29 +1,5 @@
-from app.database.requests import (get_contacts, get_services, get_cases, get_answer_by_id, 
-                                   get_events, get_services)
-from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
-from aiogram.types import (ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton, InlineKeyboardMarkup,
-                           )
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
-
-
-user_main = ReplyKeyboardMarkup(
-    keyboard=[
-        [KeyboardButton(text='📖Контакты'), KeyboardButton(text='💎Кейсы')],
-        [KeyboardButton(text='🗣Мероприятия'), KeyboardButton(text='👍Услуги')],
-        [KeyboardButton(text='❓Брифинг')]],
-    resize_keyboard=True,
-    input_field_placeholder='Выберите действие',
-    one_time_keyboard=True)
-
-admin_main = ReplyKeyboardMarkup(
-    keyboard=[
-        [KeyboardButton(text='📖Контакты'), KeyboardButton(text='💎Кейсы')],
-        [KeyboardButton(text='🗣Мероприятия'), KeyboardButton(text='👍Услуги')],
-        [KeyboardButton(text='❓Брифинг'), KeyboardButton(text='👋Приветствие')],
-        [KeyboardButton(text='✍Рассылка'), KeyboardButton(text='🛒Подписка')]],
-    resize_keyboard=True,
-    input_field_placeholder='Выберите действие',
-    one_time_keyboard=True)
 
 new_welcome = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='✍Создать', callback_data='add_welcome'),
@@ -125,93 +101,27 @@ participants_newsletter = InlineKeyboardMarkup(inline_keyboard=[
 cancel_action = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='⛔Отмена', callback_data='cancel_action')]])
 
-async def edit_contact_kb():
-    contacts = await get_contacts()
-    keyboard = InlineKeyboardBuilder()
-    for contact in contacts:
-        keyboard.add(InlineKeyboardButton(text=contact.contact_type,
-                                      callback_data=f'edit_contact_{contact.id}'))
-    keyboard.add(InlineKeyboardButton(text='⛔Отмена', callback_data='cancel_action'))
-    return keyboard.adjust(2).as_markup()
-
-async def get_cases_kb():
-    cases = await get_cases()
-    keyboard = InlineKeyboardBuilder()
-    for case in cases:
-        keyboard.add(InlineKeyboardButton(text=f"💎{case.title}", callback_data=f'cases_{case.id}'))
-    return keyboard.adjust(1).as_markup()
-
-
-async def admin_get_cases_kb():
-    cases = await get_cases()
-    keyboard = InlineKeyboardBuilder()
-    i = 0
-    for case in cases:
-        keyboard.add(InlineKeyboardButton(text=f"💎{case.title}", callback_data=f'cases_{case.id}'))
-        i += 1
-    keyboard.add(InlineKeyboardButton(text='✍Добавить кейс', callback_data='add_case'))
-    keyboard.add(InlineKeyboardButton(text='⛔Отмена', callback_data='cancel_action'))
-    return keyboard.adjust(*[1] * i, 2).as_markup()
-
-async def case_chosen_kb(case_id):
+async def case_chosen(case_id):
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='⚙Изменить', callback_data=f'edit_case_{case_id}'),
     InlineKeyboardButton(text='❌Удалить', callback_data=f'delete_case_{case_id}')],
     [InlineKeyboardButton(text='⛔Отмена', callback_data='cancel_action')]])
     return keyboard
 
-async def get_services_kb():
-    services = await get_services()
-    keyboard = InlineKeyboardBuilder()
-    for service in services:
-        keyboard.add(InlineKeyboardButton(text=f"👍{service.title}", callback_data=f'services_{service.id}'))
-    return keyboard.adjust(1).as_markup()
-
-
-async def admin_get_services_keyboard():
-    services = await get_services()
-    keyboard = InlineKeyboardBuilder()
-    i = 0
-    for service in services:
-        keyboard.add(InlineKeyboardButton(text=f"👍{service.title}", callback_data=f'services_{service.id}'))
-        i += 1
-    keyboard.add(InlineKeyboardButton(text='✍Добавить услугу', callback_data='add_service'),
-                 InlineKeyboardButton(text='⛔Отмена', callback_data='cancel_action'))
-    return keyboard.adjust(*[1] * i, 2).as_markup()
-
-
-async def service_chosen_keyboard(service_id):
+async def service_chosen(service_id):
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='⚙Изменить', callback_data=f'edit_service_{service_id}'),
     InlineKeyboardButton(text='❌Удалить', callback_data=f'delete_service_{service_id}')],
     [InlineKeyboardButton(text='⛔Отмена', callback_data='cancel_action')]])
     return keyboard
 
-async def order_service_keyboard(service_id):
+async def order_service(service_id):
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='🤝Заказать', callback_data=f'order_service_{service_id}')],
     [InlineKeyboardButton(text='⛔Отмена', callback_data='cancel_action')]])
     return keyboard
 
-async def get_events_keyboard():
-    events = await get_events()
-    keyboard = InlineKeyboardBuilder()
-    for event in events:
-        keyboard.add(InlineKeyboardButton(text=f"👏{event.title}", callback_data=f'events_{event.id}'))
-    return keyboard.adjust(1).as_markup()
-
-async def admin_get_events_keyboard():
-    events = await get_events()
-    keyboard = InlineKeyboardBuilder()
-    i = 0
-    for event in events:
-        keyboard.add(InlineKeyboardButton(text=f"👏{event.title}", callback_data=f'events_{event.id}'))
-        i += 1
-    keyboard.add(InlineKeyboardButton(text='✍Добавить мероприятие', callback_data='add_event'),
-                 InlineKeyboardButton(text='⛔Отмена', callback_data='cancel_action'))
-    return keyboard.adjust(*[1] * i, 2).as_markup()
-
-async def event_chosen_keyboard(event_id):
+async def event_chosen(event_id):
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='⚙Изменить', callback_data=f'edit_event_{event_id}'),
     InlineKeyboardButton(text='❌Удалить', callback_data=f'predelete_event_{event_id}')],
@@ -219,29 +129,15 @@ async def event_chosen_keyboard(event_id):
      InlineKeyboardButton(text="🚻Участники", callback_data=f'participants_{event_id}')]])
     return keyboard
 
-async def confirm_delete_event_keyboard(event_id):
+async def confirm_delete_event(event_id):
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='✅Подтверждаю', callback_data=f'delete_event_{event_id}')],
             [InlineKeyboardButton(text='⚙Изменить', callback_data=f'edit_event_{event_id}'),
             InlineKeyboardButton(text='⛔Отмена', callback_data='cancel_action')]])
     return keyboard
      
-
-async def enroll_user_keyboard(event_id):
-    keyboard = InlineKeyboardBuilder()
-    keyboard.add(InlineKeyboardButton(text='💾Записаться', callback_data=f'enroll_user_{event_id}'))
-    keyboard.add(InlineKeyboardButton(text='🔙Назад', callback_data='to_main'))
+async def enroll_user(event_id):
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='💾Записаться', callback_data=f'enroll_user_{event_id}'),
+    InlineKeyboardButton(text='🔙Назад', callback_data='to_main')]])
     return keyboard.adjust(2).as_markup()
-
-async def generate_answer(line):
-    answers = await get_answer_by_id(line)
-    if ";" in answers:
-        buttons = [button.strip() for button in answers.split(';')]
-        keyboard = ReplyKeyboardBuilder()
-        for answer in buttons:
-            keyboard.add(KeyboardButton(text=answer))
-        return keyboard.adjust(1).as_markup(resize_keyboard=True, one_time_keyboard=True,
-                                            input_field_placeholder="Выберите ответ")
-    else:
-        return None
-
