@@ -712,11 +712,11 @@ async def edit_question_answer(message: Message, state: FSMContext):
 async def newsletter(message: Message, state: FSMContext):
     max_id = await get_max_user_id()
     await state.set_state(Newsletter.message)
-    await message.answer(f'☝️ Количество подписчиков бота: {max_id}')
     with open('app/newsletter_hint.txt', 'r', encoding='utf-8') as text:
         newsletter_hint = text.read()
     await message.answer(newsletter_hint)
-    await message.answer('Отправьте сообщение, которое вы хотите разослать всем пользователям', 
+    await message.answer(
+        f'Сейчас в вашей базе <b>{max_id} пользователь(-ей)</b>\nОтправьте сообщение, которое вы хотите им отправить', 
                          reply_markup=kb.cancel_action)
 
 @admin.callback_query(AdminProtect(), F.data == "newsletter")
@@ -728,12 +728,18 @@ async def participants_newsletter(callback: CallbackQuery, state: FSMContext):
 @admin.message(AdminProtect(), Newsletter.message)
 async def newsletter_message(message: Message, state: FSMContext):
     await message.answer('Подождите... идёт рассылка🔊.')
+    max_id = await get_max_user_id()
+    fail = 0
     for user in await get_users():
         try:
             await message.send_copy(chat_id=user.tg_id)
         except:
+            fail += 1
             pass
-    await message.answer('Рассылка успешно завершена✔.')
+    success = max_id - fail
+    await message.answer(
+        f'🎉 Рассылке успешна завершена!\n✅ Доставлено <b>{success}</b> пользователям\n'
+        f'⛔️ Не доставлено <b>{fail}</b> пользователям')
     await state.clear()
     
 async def to_main(message: Message):
