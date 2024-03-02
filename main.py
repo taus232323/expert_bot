@@ -1,13 +1,13 @@
-# версия 1.4
+# версия 2.0
 from aiogram import Bot, Dispatcher
 import asyncio
 import logging
 
 from data.models import async_main
-from handlers import common, user, superadmin
+from handlers import common, user, superadmin, payment
 from handlers.admin import events, briefing, cases, contacts, newsletter, services, welcome
 from handlers.admin.events import schedule_reminders
-from handlers.superadmin import superadmin
+from handlers import superadmin
 from settings import TOKEN
 
 
@@ -31,6 +31,7 @@ async def main():
         newsletter.router,
         briefing.router,
         user.router,
+        payment.router,
         superadmin.router,       
         )
     

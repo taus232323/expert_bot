@@ -5,7 +5,7 @@ from aiogram.fsm.state import State, StatesGroup
 
 
 from keyboards import inline, builders
-from filters import IsAdmin
+from filters.is_admin import IsAdmin
 from data.requests import set_case, delete_case, edit_case
 
 
@@ -53,7 +53,7 @@ async def add_case_description(message: Message, state: FSMContext):
 async def delete_case_selected(callback: CallbackQuery):
     await delete_case(callback.data.split('_')[2])
     await callback.answer("Кейс успешно удалён", reply_markup=await builders.admin_get_cases())
-    markup = await builders.admin_get_cases_kb()
+    markup = await builders.admin_get_cases()
     num_buttons = sum(len(row) for row in markup.inline_keyboard)
     if num_buttons > 2: 
         await callback.message.edit_text("Мои самые лучшие кейсы", reply_markup=markup)
@@ -84,4 +84,4 @@ async def edit_case_description(message: Message, state: FSMContext):
     data = await state.get_data()
     await edit_case(data)
     await state.clear()
-    await message.answer('Кейс успешно изменён', reply_markup=await builders.admin_get_cases_kb())
+    await message.answer('Кейс успешно изменён', reply_markup=await builders.admin_get_cases())

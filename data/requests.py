@@ -1,4 +1,4 @@
-from app.database.models import (async_session, Users, Contacts, Events, Cases, Briefing, 
+from data.models import (async_session, Users, Contacts, Events, Cases, Briefing, 
                                  Services, Participants, Instructions, Welcome, UserBriefing)
 from sqlalchemy import select, delete, update, func
 from datetime import datetime
@@ -51,7 +51,7 @@ async def delete_contacts():
 async def edit_contact(data):
     async with async_session() as session:
         await session.execute(
-            update(Contacts).where(Contacts.id == data["id"]).values({
+            update(Contacts).where(Contacts.id == data["_id"]).values({
                 Contacts.contact_type: data['contact_type'],
                 Contacts.value: data['value']}))
         await session.commit()
@@ -79,7 +79,7 @@ async def delete_case(case_id: int):
 async def edit_case(data):
     async with async_session() as session:
         await session.execute(
-            update(Cases).where(Cases.id == data["id"]).values({
+            update(Cases).where(Cases.id == data["_id"]).values({
                 Cases.title: data['title'],
                 Cases.description: data['description']}))
         await session.commit()
@@ -107,7 +107,7 @@ async def delete_service(service_id: int):
 async def edit_service(data):
     async with async_session() as session:
         await session.execute(
-            update(Services).where(Services.id == data["id"]).values({
+            update(Services).where(Services.id == data["_id"]).values({
                 Services.title: data['title'],
                 Services.description: data['description']}))
         await session.commit()
@@ -140,7 +140,7 @@ async def delete_event(event_id: int):
 async def edit_event(data):
     async with async_session() as session:
         await session.execute(
-            update(Events).where(Events.id == data["id"]).values({
+            update(Events).where(Events.id == data["_id"]).values({
                 Events.title: data['title'],
                 Events.description: data['description'],
                 Events.date: data['date']}))
@@ -194,7 +194,7 @@ async def get_answer_by_id(answer_id):
 async def edit_question(data):
     async with async_session() as session:
         await session.execute(
-            update(Briefing).where(Briefing.id == data["id"]).values({
+            update(Briefing).where(Briefing.id == data["_id"]).values({
                 Briefing.question: data['question'],
                 Briefing.answer: data['answer']}))
         await session.commit()

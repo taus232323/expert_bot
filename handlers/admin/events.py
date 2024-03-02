@@ -9,7 +9,7 @@ from aiogram.exceptions import TelegramForbiddenError
 
 from settings import ADMIN_USER_IDS, TOKEN
 from keyboards import inline, builders
-from filters import IsAdmin
+from filters.is_admin import IsAdmin
 from data.requests import set_event, delete_event, edit_event, get_participants, get_event_by_id, get_events
 
 
@@ -94,7 +94,7 @@ async def delete_event_selected(callback: CallbackQuery):
     
 @router.callback_query(IsAdmin(), F.data.startswith("edit_event_"))
 async def edit_event_selected(callback: CallbackQuery, state: FSMContext):
-    await state.update_data(id=callback.data.split('_')[2])
+    await state.update_data(_id=callback.data.split('_')[2])
     await state.set_state(EditEvent.title)
     await callback.message.edit_text(
         'Введите новое название события. Для корректного отображения в меню его длина не должна превышать 40 знаков', 
@@ -183,6 +183,7 @@ async def send_admin_reminder(event_id):
 async def schedule_reminders():
     if scheduler.running:
         scheduler.shutdown(wait=False)
+        print("Scheduler stopped")
     upcoming_events = await get_events()
     for event in upcoming_events:
         event_time = event.date
@@ -202,3 +203,4 @@ async def schedule_reminders():
         scheduler.add_job(send_admin_reminder, evening_reminder_trigger, args=(event.id,))
     if not scheduler.running:
         scheduler.start()
+        print("Scheduler started")

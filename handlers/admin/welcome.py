@@ -5,7 +5,7 @@ from aiogram.fsm.state import State, StatesGroup
 
 
 from keyboards import inline, reply
-from filters import IsAdmin
+from filters.is_admin import IsAdmin
 from data.requests import get_welcome, set_welcome, edit_welcome, delete_welcome
 
 

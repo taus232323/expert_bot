@@ -9,21 +9,21 @@ from apscheduler.triggers.cron import CronTrigger
 from aiogram.exceptions import TelegramForbiddenError
 
 from settings import ADMIN_USER_IDS, TOKEN, SUPER_ADMIN_USER_IDS
-from app.admin import days_remaining
+from filters.is_superadmin import IsSuperAdmin
 
-superadmin = Router()
+router = Router()
 scheduler = AsyncIOScheduler()
 paid_days = 30
 
 class UpRent(StatesGroup):
     rent_days = State()
 
-@superadmin.message(IsSuperAdmin(), Command(commands=["rent"]))
+@router.message(IsSuperAdmin(), Command(commands=["rent"]))
 async def rent(message: Message, state: FSMContext):
     await message.answer('На сколько дней продлить аренду этого бота?')
     await state.set_state(UpRent.rent_days)
     
-@superadmin.message(IsSuperAdmin(), UpRent.rent_days)
+@router.message(IsSuperAdmin(), UpRent.rent_days)
 async def update_rent(message: Message, state: FSMContext):
     if message.text.isdigit():
         days = int(message.text)

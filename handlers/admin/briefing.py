@@ -4,7 +4,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
 from keyboards import inline, builders
-from filters import IsAdmin
+from filters.is_admin import IsAdmin
 from data.requests import (set_instructions, edit_instructions, delete_instructions, get_briefing, 
 add_question, edit_question, get_instructions, delete_briefing)
 
@@ -159,13 +159,13 @@ async def confirmed_delete_briefing(callback: CallbackQuery):
 
 @router.callback_query(IsAdmin(), F.data == "edit_question")
 async def edit_question_id(callback: CallbackQuery, state: FSMContext):
-    await state.set_state(EditBriefing.id)
+    await state.set_state(EditBriefing._id)
     await callback.message.edit_text('Введите номер вопроса, который Вы желаете изменить', 
                                      reply_markup=inline.cancel_action)
     
-@router.message(IsAdmin(), EditBriefing.id)
+@router.message(IsAdmin(), EditBriefing._id)
 async def edit_question_selected(message: Message, state: FSMContext):
-    await state.update_data(id=message.text)
+    await state.update_data(_id=message.text)
     await state.set_state(EditBriefing.question)
     await message.answer('Введите новый вопрос', reply_markup=inline.cancel_action)
     

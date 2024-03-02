@@ -140,4 +140,4 @@ async def enroll_user(event_id):
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='💾Записаться', callback_data=f'enroll_user_{event_id}'),
     InlineKeyboardButton(text='🔙Назад', callback_data='to_main')]])
-    return keyboard.adjust(2).as_markup()
+    return keyboard

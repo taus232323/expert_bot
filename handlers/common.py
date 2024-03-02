@@ -43,8 +43,6 @@ async def cmd_start(message: Message):
             await message.answer_photo(welcome.picture, welcome.about)
             await message.answer("Выберите вариант из меню ниже👇", reply_markup=reply.user_main)
         
-
-        
 @router.callback_query(F.data == "to_main")        
 async def to_main(callback: CallbackQuery):
     await callback.message.delete()
@@ -60,8 +58,7 @@ async def contact_selected(message: Message):
         else:
             await message.answer("❌Контактная информация отсутствует")
     else:
-        await message.answer(f"<b>📖Моя контактная информация и график работы:</b>\n{contact_info}",
-                             reply_markup=reply.user_main)
+        await message.answer(f"<b>📖Моя контактная информация и график работы:</b>\n{contact_info}")
         if message.from_user.id in ADMIN_USER_IDS:
             await message.answer("Выберите желаемую опцию:👇", reply_markup=inline.contacts)
    
@@ -79,7 +76,7 @@ async def cases_selected(message: Message):
             await message.answer("Выберите кейс для изменения/удаления или добавьте новый👇", 
                              reply_markup=await builders.admin_get_cases())
         else:    
-            await message.answer("Мои самые лучшие кейсы:", reply_markup=await builders.get_cases())
+            await message.answer("Мои самые лучшие кейсы:", reply_markup=await builders.get_cases_kb())
     
 @router.callback_query(F.data.startswith("cases_"))    
 async def case_detail_selected(callback: CallbackQuery):
@@ -104,7 +101,7 @@ async def service_selected(message: Message):
             await message.answer("Выберите услугу для изменения/удаления или добавьте новую👇",
                              reply_markup=await builders.admin_get_services())
         else:
-            await message.answer("Мои самые выгодные услуги:", reply_markup=await builders.get_services())
+            await message.answer("Мои самые выгодные услуги:", reply_markup=await builders.get_services_kb())
         
 @router.callback_query(F.data.startswith("services_"))
 async def service_detail_selected(callback: CallbackQuery):
@@ -130,7 +127,7 @@ async def event_selected(message: Message):
             await message.answer("Выберите мероприятие для изменения/удаления или добавьте новое👇",
                              reply_markup=await builders.admin_get_events())
         else:
-            await message.answer("👀Мои самые интересные мероприятия:", reply_markup=await builders.get_events())
+            await message.answer("👀Мои самые интересные мероприятия:", reply_markup=await builders.get_events_kb())
     
 @router.callback_query(F.data.startswith("events_"))
 async def event_detail_selected(callback: CallbackQuery):
@@ -189,7 +186,7 @@ async def briefing_selected(message: Message):
             await message.answer(f"<b>❗Инструкции❗:</b>\n{instructions}\n<b>Весь брифинг:</b>")
             for part in parts:
                 await message.answer(part)
-            await message.answer("Выберите желаемое действие👇", reply_markup=builders.admin_get_briefing)
+            await message.answer("Выберите желаемое действие👇", reply_markup=inline.admin_get_briefing)
         else:
             await show_instruction(message)
     else:

@@ -58,7 +58,7 @@ async def order_service(callback: CallbackQuery, bot: Bot):
     for admin in ADMIN_USER_IDS:
         try:
             await bot.send_message(chat_id=admin, 
-                text=f"👍Заказ услуги {service.title} от @{user}. Этот клиент очень хочет, чтобы Вы ему написали🙏")
+        text=f"👍Заказ услуги <b>{service.title}</b> от @{user}. Этот клиент очень хочет, чтобы Вы ему написали🙏")
         except TelegramForbiddenError:
             print(f"Не удалось отправить сообщение админу @{admin}")
             

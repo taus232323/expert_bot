@@ -5,7 +5,7 @@ from aiogram.fsm.state import State, StatesGroup
 
 
 from keyboards import inline, builders
-from filters import IsAdmin
+from filters.is_admin import IsAdmin
 from data.requests import set_service, delete_service, edit_service
 
 
@@ -61,7 +61,7 @@ async def delete_service_selected(callback: CallbackQuery):
 
 @router.callback_query(IsAdmin(), F.data.startswith("edit_service_"))
 async def edit_service_selected(callback: CallbackQuery, state: FSMContext):
-    await state.update_data(id=callback.data.split('_')[2])
+    await state.update_data(_id=callback.data.split('_')[2])
     await state.set_state(EditService.title)
     await callback.message.edit_text(
         'Введите новое название услуги. Для корректного отображения в меню его длина не должна превышать 40 знаков', 

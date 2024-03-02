@@ -7,11 +7,11 @@ async def edit_contact():
     contacts = await get_contacts()
     keyboard = InlineKeyboardBuilder()
     for contact in contacts:
-        keyboard.buttonn(text=contact.contact_type, callback_data=f'edit_contact_{contact.id}')
+        keyboard.button(text=contact.contact_type, callback_data=f'edit_contact_{contact.id}')
     keyboard.button(text='⛔Отмена', callback_data='cancel_action')
     return keyboard.adjust(2).as_markup()
 
-async def get_cases():
+async def get_cases_kb():
     cases = await get_cases()
     keyboard = InlineKeyboardBuilder()
     for case in cases:
@@ -29,7 +29,7 @@ async def admin_get_cases():
     keyboard.button(text='⛔Отмена', callback_data='cancel_action')
     return keyboard.adjust(*[1] * i, 2).as_markup()
 
-async def get_services():
+async def get_services_kb():
     services = await get_services()
     keyboard = InlineKeyboardBuilder()
     for service in services:
@@ -47,7 +47,7 @@ async def admin_get_services():
                  InlineKeyboardButton(text='⛔Отмена', callback_data='cancel_action'))
     return keyboard.adjust(*[1] * i, 2).as_markup()
 
-async def get_events_keyboard():
+async def get_events_kb():
     events = await get_events()
     keyboard = InlineKeyboardBuilder()
     for event in events:

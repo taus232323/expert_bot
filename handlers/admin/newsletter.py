@@ -5,7 +5,7 @@ from aiogram.fsm.state import State, StatesGroup
 
 
 from keyboards import inline
-from filters import IsAdmin
+from filters.is_admin import IsAdmin
 from data.requests import get_max_user_id, get_users
 
 
@@ -16,15 +16,15 @@ class Newsletter(StatesGroup):
     message = State()
     
 
-@router.message(IsAdmin(), F.text.lower() == '✍сделать рассылку')
+@router.message(IsAdmin(), F.text.lower() == '✍рассылка')
 async def newsletter(message: Message, state: FSMContext):
     max_id = await get_max_user_id()
     await state.set_state(Newsletter.message)
-    with open('app/newsletter_hint.txt', 'r', encoding='utf-8') as text:
+    with open('handlers/admin/newsletter_hint.txt', 'r', encoding='utf-8') as text:
         newsletter_hint = text.read()
     await message.answer(newsletter_hint)
     await message.answer(
-        f'Сейчас пользовательей в Вашей базе: <b>{max_id}</b>\nОтправьте сообщение, которое вы хотите им разослать', 
+        f'Сейчас пользователей в Вашей базе: <b>{max_id}</b>\nОтправьте сообщение, которое вы хотите им разослать', 
                          reply_markup=inline.cancel_action)
     
 @router.message(IsAdmin(), Newsletter.message)

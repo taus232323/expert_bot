@@ -5,7 +5,7 @@ from aiogram.fsm.state import State, StatesGroup
 
 
 from keyboards import inline, reply, builders
-from filters import IsAdmin
+from filters.is_admin import IsAdmin
 from data.requests import set_contact, get_contacts, delete_contacts, edit_contact
 
 
@@ -53,7 +53,7 @@ async def add_contact_value(message: Message, state: FSMContext):
 async def edit_contacts(callback: CallbackQuery):
     await callback.message.delete_reply_markup()
     await callback.message.edit_text("Выберите контактную для изменения", 
-                                  reply_markup=await builders.edit_contact_kb())
+                                  reply_markup=await builders.edit_contact())
     
 @router.callback_query(IsAdmin(), F.data.startswith("edit_contact_"))
 async def edit_contact_selected(callback: CallbackQuery, state: FSMContext):
