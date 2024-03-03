@@ -186,21 +186,22 @@ async def schedule_reminders():
         print("Scheduler stopped")
     upcoming_events = await get_events()
     for event in upcoming_events:
-        event_time = event.date
-        if event_time - timedelta(days=1) > datetime.now():
-            scheduler.add_job(send_admin_reminder, 'date', 
-                              run_date=event_time - timedelta(days=1), 
-                              args=(event.id,))
-        elif event_time - timedelta(hours=3) > datetime.now():
-            scheduler.add_job(send_admin_reminder, 'date',
-                              run_date=event_time - timedelta(hours=3),
-                              args=(event.id,))
-        elif event_time - timedelta(minutes=30) > datetime.now():
-            scheduler.add_job(send_admin_reminder, 'date',
-                              run_date=event_time - timedelta(minutes=30),
-                              args=(event.id,))
-        evening_reminder_trigger = CronTrigger(hour=19, minute=0)
-        scheduler.add_job(send_admin_reminder, evening_reminder_trigger, args=(event.id,))
-    if not scheduler.running:
-        scheduler.start()
-        print("Scheduler started")
+        if event.date <= datetime.now():
+            event_time = event.date
+            if event_time - timedelta(days=1) > datetime.now():
+                scheduler.add_job(send_admin_reminder, 'date', 
+                                run_date=event_time - timedelta(days=1), 
+                                args=(event.id,))
+            elif event_time - timedelta(hours=3) > datetime.now():
+                scheduler.add_job(send_admin_reminder, 'date',
+                                run_date=event_time - timedelta(hours=3),
+                                args=(event.id,))
+            elif event_time - timedelta(minutes=30) > datetime.now():
+                scheduler.add_job(send_admin_reminder, 'date',
+                                run_date=event_time - timedelta(minutes=30),
+                                args=(event.id,))
+            evening_reminder_trigger = CronTrigger(hour=19, minute=0)
+            scheduler.add_job(send_admin_reminder, evening_reminder_trigger, args=(event.id,))
+        if not scheduler.running:
+            scheduler.start()
+            print("Scheduler started")

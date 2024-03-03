@@ -16,7 +16,7 @@ class Newsletter(StatesGroup):
     message = State()
     
 
-@router.message(IsAdmin(), F.text.lower() == '✍рассылка')
+@router.message(IsAdmin(), F.text.lower() == '📣 рассылка')
 async def newsletter(message: Message, state: FSMContext):
     max_id = await get_max_user_id()
     await state.set_state(Newsletter.message)
@@ -24,7 +24,7 @@ async def newsletter(message: Message, state: FSMContext):
         newsletter_hint = text.read()
     await message.answer(newsletter_hint)
     await message.answer(
-        f'Сейчас пользователей в Вашей базе: <b>{max_id}</b>\nОтправьте сообщение, которое вы хотите им разослать', 
+        f'☝️Сейчас пользователей в Вашей базе: <b>{max_id}</b>\nОтправьте сообщение, которое вы хотите им разослать', 
                          reply_markup=inline.cancel_action)
     
 @router.message(IsAdmin(), Newsletter.message)
@@ -40,6 +40,6 @@ async def newsletter_message(message: Message, state: FSMContext):
             pass
     success = max_id - fail
     await message.answer(
-        f'🎉 Рассылке успешна завершена!\n✅ Доставлено <b>{success}</b> пользователям\n'
-        f'⛔️ Не доставлено <b>{fail}</b> пользователям')
+        f'🎉 Рассылке успешна завершена!\n✅ Доставлено пользователям: <b>{success}</b> \n'
+        f'⛔️ Не доставлено, отключили бота: <b>{fail}</b>')
     await state.clear()

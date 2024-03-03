@@ -18,9 +18,9 @@ paid_days = 30
 class UpRent(StatesGroup):
     rent_days = State()
 
-@router.message(IsSuperAdmin(), Command(commands=["rent"]))
+@router.message(IsSuperAdmin(), Command(commands=["promo"]))
 async def rent(message: Message, state: FSMContext):
-    await message.answer('На сколько дней продлить аренду этого бота?')
+    await message.answer('На сколько дней выдать промо для этого бота?')
     await state.set_state(UpRent.rent_days)
     
 @router.message(IsSuperAdmin(), UpRent.rent_days)

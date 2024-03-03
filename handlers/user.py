@@ -1,17 +1,15 @@
 from aiogram import Router, F, Bot
 from aiogram.types import Message, CallbackQuery
-from aiogram.filters import CommandStart, CommandObject
+
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.exceptions import TelegramForbiddenError
-from aiogram.utils.deep_linking import decode_payload
 
 
 from settings import ADMIN_USER_IDS
 from keyboards import reply, inline, builders 
-from data.requests import (get_welcome, set_user, get_user_by_id, set_participant, set_response,
-    delete_user_briefing, get_user_briefing, get_question_by_id, get_user_by_tg, get_event_by_id,
-    get_service_by_id)
+from data.requests import (get_user_by_id, set_participant, set_response, get_service_by_id,
+    delete_user_briefing, get_user_briefing, get_question_by_id, get_user_by_tg, get_event_by_id)
 
 class BriefingStates(StatesGroup):
     question = State()
@@ -21,22 +19,7 @@ class BriefingStates(StatesGroup):
 
 router = Router()
 
-@router.message(CommandStart(deep_link=True))
-async def cmd_start(message: Message, command: CommandObject):
-    welcome = await get_welcome()
-    user_id = message.from_user.id
-    if isinstance(message, Message):
-        await set_user(user_id, message.from_user.username)
-    args = command.args
-    payload = decode_payload(args)
-    await enroll_user_from_deep_link(message, user_id, payload)
-    if not welcome:
-        await message.answer(f"👋Добро пожаловать, {message.from_user.first_name}!"
-            "Выберите вариант из меню ниже👇", reply_markup=reply.user_main)
-    else:
-        await message.answer_photo(welcome.picture, welcome.about)
-        await message.answer("Выберите вариант из меню ниже👇", reply_markup=reply.user_main)
-        
+
 async def enroll_user_from_deep_link(message: Message, tg_id, event_id):
     event = await get_event_by_id(event_id)
     formatted_date = event.date.strftime('%d-%m-%Y- %H:%M')
@@ -48,7 +31,7 @@ async def enroll_user_from_deep_link(message: Message, tg_id, event_id):
         await message.answer(success_message, reply_markup=reply.user_main)
     else:
         await message.answer(is_in_event, reply_markup=reply.user_main)
-        
+     
 @router.callback_query(F.data.startswith("order_service_"))
 async def order_service(callback: CallbackQuery, bot: Bot):
     service = await get_service_by_id(callback.data.split("_")[2])

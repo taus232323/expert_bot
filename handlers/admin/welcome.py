@@ -23,7 +23,7 @@ class EditWelcome(StatesGroup):
     about = State()    
     
 
-@router.message(IsAdmin(), F.text.lower() == "👋приветствие")    
+@router.message(IsAdmin(), F.text.lower() == "👋 приветствие")    
 async def welcome_selected(message: Message):
     welcome = await get_welcome()
     if welcome:

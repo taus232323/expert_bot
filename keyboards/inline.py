@@ -101,6 +101,26 @@ participants_newsletter = InlineKeyboardMarkup(inline_keyboard=[
 cancel_action = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='⛔Отмена', callback_data='cancel_action')]])
 
+admin_support = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='💡 Предложить идею', callback_data='suggest_idea'),
+        InlineKeyboardButton(text='🤬 Написать о проблеме', callback_data='report_problem')],
+    [InlineKeyboardButton(text='🎁 Запросить промо', callback_data='ask_promo'),
+        InlineKeyboardButton(text='💳 Оплатить подписку', callback_data='pay_subscription')]])
+
+super_admin_support = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='🎁 Выдать промо', callback_data='gift_promo')]])
+
+answer_idea = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='📝 Ответить', callback_data='answer_idea'),
+     InlineKeyboardButton(text='🆘 Я занят', callback_data='i_am_busy')]])
+
+async def passage_to_support(client_link):
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='⚡ Перейти',
+                          url=f'https://t.me/PaysAndSupportBot?start={client_link}')]])
+    return keyboard
+
+
 async def case_chosen(case_id):
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='⚙Изменить', callback_data=f'edit_case_{case_id}'),
