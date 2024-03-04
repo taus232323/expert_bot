@@ -98,6 +98,12 @@ class Welcome(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     about: Mapped[str] = mapped_column(String(1024))
     picture: Mapped[str] = mapped_column(String(200))
+    
+class PaidDays(Base):
+    __tablename__ = "settings"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    days: Mapped[int] = mapped_column(BigInteger)
   
 
 async def async_main():

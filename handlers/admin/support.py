@@ -2,12 +2,13 @@ from aiogram import Router, F, Bot
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
-from aiogram.utils.deep_linking import decode_payload, create_start_link
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from settings import ADMIN_USER_IDS, TOKEN, SUPER_ADMIN_USER_IDS, paid_days
+from settings import ADMIN_USER_IDS, TOKEN, SUPER_ADMIN_USER_IDS
 from keyboards import reply, inline, builders 
 from filters.is_admin import IsAdmin
 from filters.is_superadmin import IsSuperAdmin
+from data.requests import get_paid_days, update_paid_days
 
 class SuggestIdea(StatesGroup):
     idea = State()
@@ -15,6 +16,7 @@ class SuggestIdea(StatesGroup):
     send_answer = State()
 
 
+scheduler = AsyncIOScheduler()
 router = Router()
 
 support_hint = (
@@ -25,6 +27,7 @@ support_hint = (
 @router.message(IsAdmin(), F.text.lower() == "🛠 поддержка")
 async def support_selected(message: Message, bot: Bot):
     bot_me = await bot.get_me()
+    paid_days = await get_paid_days()
     await message.answer(
         f"🛠 Добро пожаловать в меню поддержки.\nВам доступно дней активной подписки: <b>{paid_days}</b>\n")
     await message.answer(support_hint, reply_markup=await inline.passage_to_support(bot_me.username))
@@ -33,7 +36,32 @@ async def support_selected(message: Message, bot: Bot):
 async def suggest_idea(callback: CallbackQuery, state: FSMContext):
     await callback.message.answer("Отправьте ваше предложение", reply_markup=inline.cancel_action)
     await state.set_state(SuggestIdea.idea)
-    
+   
+async def change_paid_days(days: int):
+    bot = Bot(TOKEN)
+    current_paid_days = await get_paid_days()
+    if current_paid_days < 0:
+        new_paid_days = current_paid_days + days
+        await update_paid_days(new_paid_days)
+    else:
+        await send_lease_reminder()
+
+async def send_lease_reminder():
+    bot = Bot(TOKEN)
+    bot_me = await bot.get_me()
+    for admin in ADMIN_USER_IDS:
+        try:
+            await bot.send_message(admin, 'Ваша подписка закончилась. Перейдите в бота оплаты для её продления',
+                                   reply_markup=await inline.passage_to_support(bot_me.username))
+        except:
+            pass
+    await bot.session.close()  
+   
+async def schedule_decrease_paid_days():
+    scheduler.add_job(change_paid_days, 'interval', days=1, args=[-1])
+    if not scheduler.running:
+            scheduler.start()
+       
 @router.message(IsAdmin(), SuggestIdea.idea)
 async def send_idea(message: Message, state: FSMContext, bot: Bot):
     await state.update_data(idea=message.text)

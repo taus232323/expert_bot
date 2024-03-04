@@ -7,6 +7,7 @@ from aiogram.utils.deep_linking import decode_payload, create_start_link
 
 import settings
 from handlers.user import enroll_user_from_deep_link
+from handlers.admin.support import change_paid_days
 from settings import ADMIN_USER_IDS, TOKEN, SUPER_ADMIN_USER_IDS
 from keyboards import reply, inline, builders 
 from data.requests import (get_welcome, get_contacts, set_user, get_cases, get_case_by_id, get_services,
@@ -24,35 +25,40 @@ class BriefingStates(StatesGroup):
 router = Router()
 
 
-@router.message(CommandStart(deep_link_encoded=True))
+@router.message(CommandStart(deep_link=True))
 async def cmd_start(message: Message, command: CommandObject):
     welcome = await get_welcome()
     user_id = message.from_user.id
-    if isinstance(message, Message):
-        await set_user(user_id, message.from_user.username)
+    await set_user(user_id, message.from_user.username)
     args = command.args
-    payload = decode_payload(args)
-    payload_parts = payload.split("_")
+    payload_parts = args.split("_")
     payload_type = payload_parts[0]
-    if payload_type == "event":
-        event_id = payload_parts[1]
-        await enroll_user_from_deep_link(message, user_id, event_id)
-    elif payload_type == "days":
+    if payload_type == "days":
+        print(payload_parts[1])
         days = int(payload_parts[1])
         await change_paid_days(days)
-    if not welcome:
-        await message.answer(f"👋Добро пожаловать, {message.from_user.first_name}!"
-            "Выберите вариант из меню ниже👇", reply_markup=reply.user_main)
     else:
-        await message.answer_photo(welcome.picture, welcome.about)
-        await message.answer("Выберите вариант из меню ниже👇", reply_markup=reply.user_main)
+        payload = decode_payload(args)
+        payload_parts = payload.split("_")
+        event_id = payload_parts[1]
+        await enroll_user_from_deep_link(message, user_id, event_id)
+    if message.from_user.id in ADMIN_USER_IDS:
+        await message.answer(f"👋Добро пожаловать, администратор {message.from_user.first_name}! "
+        "Нажмите на кнопку в меню для просмотра, добавления или изменения информации👇",
+            reply_markup=reply.admin_main)
+    else:
+        if not welcome:
+            await message.answer(f"👋Добро пожаловать, {message.from_user.first_name}!"
+                "Выберите вариант из меню ниже👇", reply_markup=reply.user_main)
+        else:
+            await message.answer_photo(welcome.picture, welcome.about)
+            await message.answer("Выберите вариант из меню ниже👇", reply_markup=reply.user_main)
 
 @router.message(CommandStart())
 async def cmd_start(message: Message):
     welcome = await get_welcome()
     user_id = message.from_user.id
-    if isinstance(message, Message):
-        await set_user(user_id, message.from_user.username)
+    await set_user(user_id, message.from_user.username)
     if message.from_user.id in ADMIN_USER_IDS:
         await message.answer(f"👋Добро пожаловать, администратор {message.from_user.first_name}! "
         "Нажмите на кнопку в меню для просмотра, добавления или изменения информации👇",
@@ -67,9 +73,8 @@ async def cmd_start(message: Message):
             await message.answer_photo(welcome.picture, welcome.about)
             await message.answer("Выберите вариант из меню ниже👇", reply_markup=reply.user_main)
         
-async def change_paid_days(days: int):
-    settings.paid_days += days
-        
+
+            
 @router.callback_query(F.data == "to_main")        
 async def to_main(callback: CallbackQuery):
     await callback.message.delete()

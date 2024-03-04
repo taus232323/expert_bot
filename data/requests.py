@@ -1,9 +1,20 @@
 from data.models import (async_session, Users, Contacts, Events, Cases, Briefing, 
-                                 Services, Participants, Instructions, Welcome, UserBriefing)
+                                 Services, Participants, Instructions, Welcome, UserBriefing, PaidDays)
 from sqlalchemy import select, delete, update, func
 from datetime import datetime
 
 
+async def get_paid_days() -> int:
+    async with async_session() as session:
+        paid_days = await session.scalar(select(PaidDays))
+        return paid_days.days
+
+async def update_paid_days(data):
+    async with async_session() as session:
+        await session.execute(update(PaidDays).where(PaidDays.id == 1).values({
+                PaidDays.days: data}))
+        await session.commit()
+    
 async def set_user(tg_id, username):
     async with async_session() as session:
         user = await session.scalar(select(Users).where(Users.tg_id == tg_id, Users.username == username))

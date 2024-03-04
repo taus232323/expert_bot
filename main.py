@@ -1,10 +1,10 @@
 # версия 2.0
-from aiogram import Bot, Dispatcher
+from aiogram import Bot, Dispatcher, types
 import asyncio
 import logging
 
 from data.models import async_main
-from handlers import common, user, superadmin, payment
+from handlers import common, user, superadmin
 from handlers.admin import events, briefing, cases, contacts, newsletter, services, welcome, support
 from handlers.admin.events import schedule_reminders
 from handlers import superadmin
@@ -19,7 +19,8 @@ logging.basicConfig(
 async def main():
     await async_main()
     
-    bot = Bot(token=TOKEN, parse_mode='HTML')
+    bot = Bot(token=TOKEN)
+    bot.default.parse_mode = 'HTML'
     dp = Dispatcher()
     dp.include_routers(
         common.router,
@@ -32,7 +33,6 @@ async def main():
         briefing.router,
         user.router,
         support.router,
-        payment.router,
         superadmin.router
         )
     
@@ -40,6 +40,7 @@ async def main():
     await dp.start_polling(bot)
     
     await schedule_reminders()
+    await support.schedule_decrease_paid_days()
     
 
 if __name__ == '__main__':

@@ -10,7 +10,8 @@ from aiogram.exceptions import TelegramForbiddenError
 from settings import ADMIN_USER_IDS, TOKEN
 from keyboards import inline, builders
 from filters.is_admin import IsAdmin
-from data.requests import set_event, delete_event, edit_event, get_participants, get_event_by_id, get_events
+from data.requests import (
+    set_event, delete_event, edit_event, get_participants, get_event_by_id, get_events, get_paid_days, update_paid_days) 
 
 
 router = Router()
@@ -178,12 +179,11 @@ async def send_admin_reminder(event_id):
             await bot.send_message(chat_id=admin, text=message_text, reply_markup=inline.participants_newsletter)
         except TelegramForbiddenError:
             print(f"Не удалось отправить уведомление админу {admin}")
-    await bot.session.close()
+    await bot.session.close() 
 
 async def schedule_reminders():
     if scheduler.running:
         scheduler.shutdown(wait=False)
-        print("Scheduler stopped")
     upcoming_events = await get_events()
     for event in upcoming_events:
         if event.date <= datetime.now():
@@ -204,4 +204,5 @@ async def schedule_reminders():
             scheduler.add_job(send_admin_reminder, evening_reminder_trigger, args=(event.id,))
         if not scheduler.running:
             scheduler.start()
-            print("Scheduler started")
+            
+            
