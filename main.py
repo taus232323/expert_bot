@@ -6,7 +6,8 @@ import logging
 from data.models import async_main
 from handlers import common, user, superadmin
 from handlers.admin import events, briefing, cases, contacts, newsletter, services, welcome, support
-from handlers.admin.events import schedule_reminders
+from handlers.admin.events import schedule_event_reminders, events_scheduler
+from handlers.admin.support import days_scheduler, schedule_decrease_paid_days
 from handlers import superadmin
 from settings import TOKEN
 
@@ -39,8 +40,9 @@ async def main():
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
     
-    await schedule_reminders()
-    await support.schedule_decrease_paid_days()
+    # await schedule_event_reminders()
+            
+    await schedule_decrease_paid_days()
     
 
 if __name__ == '__main__':

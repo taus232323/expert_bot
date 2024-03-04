@@ -73,8 +73,6 @@ async def cmd_start(message: Message):
             await message.answer_photo(welcome.picture, welcome.about)
             await message.answer("Выберите вариант из меню ниже👇", reply_markup=reply.user_main)
         
-
-            
 @router.callback_query(F.data == "to_main")        
 async def to_main(callback: CallbackQuery):
     await callback.message.delete()

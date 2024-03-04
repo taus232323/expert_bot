@@ -114,12 +114,11 @@ answer_idea = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='📝 Ответить', callback_data='answer_idea'),
      InlineKeyboardButton(text='🆘 Я занят', callback_data='i_am_busy')]])
 
-async def passage_to_support(client_link):
+async def go_to_support(client_link):
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='⚡ Перейти',
                           url=f'https://t.me/PaysAndSupportBot?start={client_link}')]])
     return keyboard
-
 
 async def case_chosen(case_id):
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
