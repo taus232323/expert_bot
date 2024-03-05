@@ -5,14 +5,14 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.utils.deep_linking import decode_payload, create_start_link
 
-import settings
+
 from handlers.user import enroll_user_from_deep_link
-from handlers.admin.support import change_paid_days
+from handlers.admin.support import change_paid_days, allow_admin_access, send_lease_reminder
 from settings import ADMIN_USER_IDS, TOKEN, SUPER_ADMIN_USER_IDS
 from keyboards import reply, inline, builders 
 from data.requests import (get_welcome, get_contacts, set_user, get_cases, get_case_by_id, get_services,
                            get_service_by_id, get_events, get_event_by_id, get_briefing, get_instructions, 
-                           get_admins)
+                           get_paid_days, set_base_days)
 
 
 admin_hint = "Нажмите на кнопку в меню для просмотра, добавления или изменения информации👇"
@@ -65,18 +65,25 @@ async def handle_days(bot, days):
 async def cmd_start(message: Message):
     welcome = await get_welcome()
     user_id = message.from_user.id
+    days = await get_paid_days()
     await set_user(user_id, message.from_user.username)
     if message.from_user.id in SUPER_ADMIN_USER_IDS:
+        if not days:
+            await set_base_days()
+            await message.answer("Выдан пробный период 3 дня")
         await message.answer(f"👋Добро пожаловать, супер администратор {message.from_user.first_name}!",
                              reply_markup=reply.super_admin_main)
+    if days >= 1:
+        await allow_admin_access()
+        print
     elif message.from_user.id in ADMIN_USER_IDS:
         await message.answer(f"👋Добро пожаловать, администратор {message.from_user.first_name}! "
-        "Нажмите на кнопку в меню для просмотра, добавления или изменения информации👇",
+        "Нажмите на кнопку в меню для просмотра, добавления или изменения информации",
             reply_markup=reply.admin_main)
     else:
         if not welcome:
             await message.answer(f"👋Добро пожаловать, {message.from_user.first_name}!"
-                "Выберите вариант из меню ниже👇", reply_markup=reply.user_main)
+                "Выберите вариант из меню ниже", reply_markup=reply.user_main)
         else:
             await message.answer_photo(welcome.picture, welcome.about)
             await message.answer("Выберите вариант из меню ниже👇", reply_markup=reply.user_main)

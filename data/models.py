@@ -84,7 +84,6 @@ class UserBriefing(Base):
     
     user_rel: Mapped['Users'] = relationship(back_populates="user_briefing_rel")
     question_rel: Mapped['Briefing'] = relationship(back_populates="user_briefing_rel")
-    
 
 class Instructions(Base):
     __tablename__ = "instruction"

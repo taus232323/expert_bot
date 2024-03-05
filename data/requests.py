@@ -20,10 +20,17 @@ async def get_admins() -> list:
             admins.insert(0, my_admin_id)
         return admins
 
+async def set_base_days():
+    async with async_session() as session:
+        days = await session.scalar(select(PaidDays))
+        if not days:
+            session.add(PaidDays(days=3))
+            await session.commit()    
+
 async def get_paid_days() -> int:
     async with async_session() as session:
         paid_days = await session.scalar(select(PaidDays))
-        return paid_days.days
+        return paid_days.days if paid_days else 0
 
 async def update_paid_days(data):
     async with async_session() as session:
@@ -46,7 +53,7 @@ async def get_users():
 async def get_max_user_id() -> int:
     async with async_session() as session:
         max_id = await session.scalar(select(func.max(Users.id)))
-    return max_id
+    return int(max_id - 1)
     
 async def get_user_by_id(user_id: int):
     async with async_session() as session:
