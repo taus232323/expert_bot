@@ -1,37 +1,42 @@
-from datetime import datetime, timedelta
 from aiogram import Router, F, Bot
 from aiogram.types import Message, CallbackQuery
-from aiogram.filters import Filter, Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.triggers.cron import CronTrigger
 from aiogram.exceptions import TelegramForbiddenError
 
 from settings import ADMIN_USER_IDS, TOKEN, SUPER_ADMIN_USER_IDS
 from filters.is_superadmin import IsSuperAdmin
+from data.requests import get_users, add_admin, get_user_by_id
+from keyboards import reply
+
+class AddAdmin(StatesGroup):
+    admin_id = State()
 
 router = Router()
-scheduler = AsyncIOScheduler()
-paid_days = 30
 
-class UpRent(StatesGroup):
-    rent_days = State()
+@router.message(IsSuperAdmin(), F.text.lower() == "▶ добавить администратора")
+async def add_admin_chosed(message: Message, state: FSMContext):
+    users = await get_users()
+    user_info = "\n".join([f"id:{user.id} {user.username}" for user in users])
+    await message.answer(user_info)
+    await state.set_state(AddAdmin.admin_id)
+    await message.answer('Введите ID пользователя которого хотите сделать администратором')
 
-@router.message(IsSuperAdmin(), Command(commands=["promo"]))
-async def rent(message: Message, state: FSMContext):
-    await message.answer('На сколько дней выдать промо для этого бота?')
-    await state.set_state(UpRent.rent_days)
-    
-@router.message(IsSuperAdmin(), UpRent.rent_days)
-async def update_rent(message: Message, state: FSMContext):
+@router.message(IsSuperAdmin(), AddAdmin.admin_id)
+async def add_admin(message: Message, state: FSMContext, bot: Bot):
     if message.text.isdigit():
-        days = int(message.text)
+        admin_id = int(message.text)
     else:
         await message.answer('Вы ввели не число')
         return
-    days_remaining += days
-    
+    user = await get_user_by_id(admin_id)
+    await add_admin(user.tg_id)
+    await message.answer(f'Администратор {user.username} добавлен')
+    try:
+        await bot.send_message(admin_id, 'Вы теперь администратор', reply_markup=reply.admin_main)
+    except TelegramForbiddenError:
+        await message.answer('Не удалось отправить сообщение администратору')
+
     
 @router.message()
 async def echo(message: Message):

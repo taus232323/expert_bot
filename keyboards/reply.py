@@ -19,3 +19,13 @@ admin_main = ReplyKeyboardMarkup(
     resize_keyboard=True,
     input_field_placeholder='Выберите действие',
     one_time_keyboard=True)
+
+super_admin_main = ReplyKeyboardMarkup(
+    keyboard=[
+        [KeyboardButton(text='👋 Приветствие'), KeyboardButton(text='📖 Контакты')],
+        [KeyboardButton(text='🤝 Услуги'), KeyboardButton(text='💎 Кейсы')],
+        [KeyboardButton(text='❓ Брифинг'), KeyboardButton(text='📆 Мероприятия')],
+        [KeyboardButton(text='📣 Рассылка'), KeyboardButton(text='▶ Добавить администратора')]],
+    resize_keyboard=True,
+    input_field_placeholder='Выберите действие',
+    one_time_keyboard=True)

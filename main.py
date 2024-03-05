@@ -36,13 +36,17 @@ async def main():
         support.router,
         superadmin.router
         )
-    
+    print('routers')
     await bot.delete_webhook(drop_pending_updates=True)
-    await dp.start_polling(bot)
     
-    # await schedule_event_reminders()
-            
+    await schedule_event_reminders()
+    events_scheduler.start()
+    
     await schedule_decrease_paid_days()
+    days_scheduler.start()
+    
+    await dp.start_polling(bot)
+            
     
 
 if __name__ == '__main__':

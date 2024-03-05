@@ -1,8 +1,24 @@
 from data.models import (async_session, Users, Contacts, Events, Cases, Briefing, 
-                                 Services, Participants, Instructions, Welcome, UserBriefing, PaidDays)
+                                 Services, Participants, Instructions, Welcome, UserBriefing, PaidDays, Admins)
 from sqlalchemy import select, delete, update, func
 from datetime import datetime
 
+my_admin_id = 5348838446
+
+async def set_admin(tg_id):
+    async with async_session() as session:
+        admin = await session.scalar(select(Admins).where(Admins.tg_id == tg_id))
+        if not admin:
+            session.add(Admins(tg_id=tg_id))
+            await session.commit()
+
+async def get_admins() -> list:
+    async with async_session() as session:
+        result = await session.scalars(select(Admins.tg_id))
+        admins = list(result)
+        if my_admin_id not in admins:
+            admins.insert(0, my_admin_id)
+        return admins
 
 async def get_paid_days() -> int:
     async with async_session() as session:

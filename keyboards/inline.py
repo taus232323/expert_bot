@@ -2,113 +2,110 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 
 new_welcome = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='✍Создать', callback_data='add_welcome'),
-        InlineKeyboardButton(text='⏳Позже', callback_data='cancel_action')]])
+    [InlineKeyboardButton(text='✍ Создать', callback_data='add_welcome'),
+        InlineKeyboardButton(text='⏳ Позже', callback_data='cancel_action')]])
 
 edit_welcome = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='⚙Изменить', callback_data='edit_welcome'),
-        InlineKeyboardButton(text='❌Удалить', callback_data='predelete_welcome')],
-    [InlineKeyboardButton(text='🔙На главную', callback_data='cancel_action')]])
+    [InlineKeyboardButton(text='⚙ Изменить', callback_data='edit_welcome'),
+        InlineKeyboardButton(text='❌ Удалить', callback_data='predelete_welcome')],
+    [InlineKeyboardButton(text='🔙 На главную', callback_data='cancel_action')]])
 
 confirm_delete_welcome = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='✅Уверен', callback_data='delete_welcome'),
-        InlineKeyboardButton(text='⛔Отмена', callback_data='cancel_action')]])
+    [InlineKeyboardButton(text='✅ Уверен', callback_data='delete_welcome'),
+        InlineKeyboardButton(text='⛔ Отмена', callback_data='cancel_action')]])
 
 contacts = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text='✍Добавить', callback_data='add_contact'),
-        InlineKeyboardButton(text='⚙Изменить', callback_data='edit_contacts')],
-            [InlineKeyboardButton(text='❌Удалить', callback_data='predelete_contact'),
-            InlineKeyboardButton(text='⛔Отмена', callback_data='cancel_action')]])
+        [InlineKeyboardButton(text='✍ Добавить', callback_data='add_contact'),
+        InlineKeyboardButton(text='⚙ Изменить', callback_data='edit_contacts')],
+            [InlineKeyboardButton(text='❌ Удалить', callback_data='predelete_contact'),
+            InlineKeyboardButton(text='⛔ Отмена', callback_data='cancel_action')]])
 
 new_contact = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='✍Добавить', callback_data='add_contact'),
-            InlineKeyboardButton(text='⛔Отмена', callback_data='cancel_action')]])
+    [InlineKeyboardButton(text='✍ Добавить', callback_data='add_contact'),
+            InlineKeyboardButton(text='⛔ Отмена', callback_data='cancel_action')]])
 
 confirm_delete_contacts = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='✅Согласен', callback_data='delete_contacts'),
-            InlineKeyboardButton(text='⛔Отмена', callback_data='cancel_delete')]])
+    [InlineKeyboardButton(text='✅ Согласен', callback_data='delete_contacts'),
+            InlineKeyboardButton(text='⛔ Отмена', callback_data='cancel_delete')]])
 
 new_case = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='✍Добавить', callback_data='add_case'),
-            InlineKeyboardButton(text='⛔Отмена', callback_data='cancel_action')]])
+    [InlineKeyboardButton(text='✍ Добавить', callback_data='add_case'),
+            InlineKeyboardButton(text='⛔ Отмена', callback_data='cancel_action')]])
 
 new_service = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='✍Добавить', callback_data='add_service'),
-            InlineKeyboardButton(text='⛔Отмена', callback_data='cancel_action')]])
+    [InlineKeyboardButton(text='✍ Добавить', callback_data='add_service'),
+            InlineKeyboardButton(text='⛔ Отмена', callback_data='cancel_action')]])
 
 new_event = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='✍Добавить', callback_data='add_event'),
-            InlineKeyboardButton(text='⛔Отмена', callback_data='cancel_action')]])
+    [InlineKeyboardButton(text='✍ Добавить', callback_data='add_event'),
+            InlineKeyboardButton(text='⛔ Отмена', callback_data='cancel_action')]])
 
 new_instruction = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='✍Добавить', callback_data='add_instruction'),
-            InlineKeyboardButton(text='⛔Отмена', callback_data='cancel_action')]])
+    [InlineKeyboardButton(text='✍ Добавить', callback_data='add_instruction'),
+            InlineKeyboardButton(text='⛔ Отмена', callback_data='cancel_action')]])
 
 edit_instruction = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='⚙Изменить', callback_data='edit_instruction'),
-            InlineKeyboardButton(text='Удалить', callback_data='delete_instruction')],
-    [InlineKeyboardButton(text='⛔Отмена', callback_data='cancel_action')]])
+    [InlineKeyboardButton(text='⚙ Изменить', callback_data='edit_instruction'),
+            InlineKeyboardButton(text='❌ Удалить', callback_data='delete_instruction')],
+    [InlineKeyboardButton(text='⛔ Отмена', callback_data='cancel_action')]])
 
 create_briefing = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='✍Создать', callback_data='create_briefing'),
-            InlineKeyboardButton(text='⛔Отмена', callback_data='cancel_action')],
-    [InlineKeyboardButton(text='⚠Инструкция', callback_data='instruction')]])
+    [InlineKeyboardButton(text='✍ Создать', callback_data='create_briefing'),
+            InlineKeyboardButton(text='⛔ Отмена', callback_data='cancel_action')],
+    [InlineKeyboardButton(text='⚠ Инструкция', callback_data='instruction')]])
 
 in_create_briefing = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text='✍Добавить', callback_data='add_question'),
-        InlineKeyboardButton(text='👀Посмотреть', callback_data='view_briefing')],
-            [InlineKeyboardButton(text='⛔Отмена', callback_data='cancel_action')]])
+        [InlineKeyboardButton(text='✍ Добавить', callback_data='add_question'),
+        InlineKeyboardButton(text='👀 Посмотреть', callback_data='view_briefing')],
+            [InlineKeyboardButton(text='⛔ Отмена', callback_data='cancel_action')]])
 
 admin_get_briefing = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='⚙Изменить', callback_data='edit_briefing'),
-            InlineKeyboardButton(text='❌Удалить', callback_data='predelete_briefing')],
-    [InlineKeyboardButton(text='⚠Инструкция', callback_data='instruction'),
-    InlineKeyboardButton(text='⛔Отмена', callback_data='cancel_action')]])
+    [InlineKeyboardButton(text='⚙ Изменить', callback_data='edit_briefing'),
+            InlineKeyboardButton(text='❌ Удалить', callback_data='predelete_briefing')],
+    [InlineKeyboardButton(text='⚠ Инструкция', callback_data='instruction'),
+    InlineKeyboardButton(text='⛔ Отмена', callback_data='cancel_action')]])
 
 edit_briefing = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='✍Добавить', callback_data='add_question'),
-    InlineKeyboardButton(text='⚙Изменить', callback_data='edit_question')],
-    [InlineKeyboardButton(text='❌Удалить', callback_data='predelete_briefing'),
-    InlineKeyboardButton(text='⛔Отмена', callback_data='cancel_action')]])
+    [InlineKeyboardButton(text='✍ Добавить', callback_data='add_question'),
+    InlineKeyboardButton(text='⚙ Изменить', callback_data='edit_question')],
+    [InlineKeyboardButton(text='❌ Удалить', callback_data='predelete_briefing'),
+    InlineKeyboardButton(text='⛔ Отмена', callback_data='cancel_action')]])
      
 confirm_delete_briefing = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='✅Согласен', callback_data='delete_briefing'),
-            InlineKeyboardButton(text='⛔Отмена', callback_data='cancel_action')]])
+    [InlineKeyboardButton(text='✅ Согласен', callback_data='delete_briefing'),
+            InlineKeyboardButton(text='⛔ Отмена', callback_data='cancel_action')]])
 
 start_briefing = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='👉Начать', callback_data='start_briefing'),
-            InlineKeyboardButton(text='⛔Отмена', callback_data='cancel_action')]])
+    [InlineKeyboardButton(text='👉 Начать', callback_data='start_briefing'),
+            InlineKeyboardButton(text='⛔ Отмена', callback_data='cancel_action')]])
 
 in_briefing = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text='👉Продолжить', callback_data='continue'),
-        InlineKeyboardButton(text='⚙Изменить', callback_data='edit_answer')],
-            [InlineKeyboardButton(text='↩Начать заново', callback_data='start_briefing'),
-            InlineKeyboardButton(text='🛑Закончить', callback_data='preend_briefing')]])  
+        [InlineKeyboardButton(text='👉 Продолжить', callback_data='continue'),
+        InlineKeyboardButton(text='⚙ Изменить', callback_data='edit_answer')],
+            [InlineKeyboardButton(text='↩ Начать заново', callback_data='start_briefing'),
+            InlineKeyboardButton(text='🛑 Закончить', callback_data='preend_briefing')]])  
 
 end_briefing_selected = InlineKeyboardMarkup(inline_keyboard=[
- [InlineKeyboardButton(text='👉Вернуться', callback_data='resume_briefing'),
-            InlineKeyboardButton(text='⛔Закончить', callback_data='end_briefing')]])
+ [InlineKeyboardButton(text='👉 Вернуться', callback_data='resume_briefing'),
+            InlineKeyboardButton(text='⛔ Закончить', callback_data='end_briefing')]])
     
 briefing_finished = InlineKeyboardMarkup(inline_keyboard=[
-     [InlineKeyboardButton(text='🔄Сначала', callback_data='restart_briefing'),
-    InlineKeyboardButton(text='🔙Меню', callback_data='to_main')]])
+     [InlineKeyboardButton(text='🔄 Сначала', callback_data='restart_briefing'),
+    InlineKeyboardButton(text='🔙 Меню', callback_data='to_main')]])
     
     
 participants_newsletter = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='✍Сделать рассылку', callback_data='newsletter'),
-     InlineKeyboardButton(text='⛔Отмена', callback_data='cancel_action')]])
+    [InlineKeyboardButton(text='✍ Сделать рассылку', callback_data='newsletter'),
+     InlineKeyboardButton(text='⛔ Отмена', callback_data='cancel_action')]])
 
 cancel_action = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='⛔Отмена', callback_data='cancel_action')]])
+    [InlineKeyboardButton(text='⛔ Отмена', callback_data='cancel_action')]])
 
 admin_support = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='💡 Предложить идею', callback_data='suggest_idea'),
         InlineKeyboardButton(text='🤬 Написать о проблеме', callback_data='report_problem')],
     [InlineKeyboardButton(text='🎁 Запросить промо', callback_data='ask_promo'),
         InlineKeyboardButton(text='💳 Оплатить подписку', callback_data='pay_subscription')]])
-
-super_admin_support = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='🎁 Выдать промо', callback_data='gift_promo')]])
 
 answer_idea = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='📝 Ответить', callback_data='answer_idea'),

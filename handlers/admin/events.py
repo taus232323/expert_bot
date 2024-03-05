@@ -15,7 +15,7 @@ from data.requests import (
 
 
 router = Router()
-events_scheduler = AsyncIOScheduler()
+events_scheduler = AsyncIOScheduler(timezone='Europe/Moscow')
 admin_hint = "Нажмите на кнопку в меню для просмотра, добавления или изменения информации👇"
 
 
@@ -131,7 +131,7 @@ async def edit_event_date(message: Message, state: FSMContext):
             return
         await state.update_data(date=date)
         data = await state.get_data()
-        event_id = data['id']
+        event_id = data['_id']
         await remove_old_reminders(event_id)
         await edit_event(data)
         await state.clear()
@@ -184,25 +184,21 @@ async def send_admin_reminder(event_id):
 async def schedule_event_reminders():
     upcoming_events = await get_events()
     for event in upcoming_events:
-        participants = event.participants
-        if event.date <= datetime.now() and len(participants) > 1:
-            event_time = event.date
-            if event_time - timedelta(days=1) > datetime.now():
-                events_scheduler.add_job(send_admin_reminder, 'date', 
-                                run_date=event_time - timedelta(days=1), 
-                                args=(event.id,))
-            elif event_time - timedelta(hours=3) > datetime.now():
-                events_scheduler.add_job(send_admin_reminder, 'date',
-                                run_date=event_time - timedelta(hours=3),
-                                args=(event.id,))
-            elif event_time - timedelta(minutes=30) > datetime.now():
-                events_scheduler.add_job(send_admin_reminder, 'date',
-                                run_date=event_time - timedelta(minutes=30),
-                                args=(event.id,))
-            evening_reminder_trigger = CronTrigger(hour=19, minute=0)
-            events_scheduler.add_job(send_admin_reminder, evening_reminder_trigger, args=(event.id,))
-        if not events_scheduler.running:
-            events_scheduler.start()
-            print("Scheduler started")
+        event_time = event.date
+        if event_time - timedelta(days=1) > datetime.now():
+            events_scheduler.add_job(send_admin_reminder, 'date', 
+                              run_date=event_time - timedelta(days=1), 
+                              args=(event.id,))
+        elif event_time - timedelta(hours=3) > datetime.now():
+            events_scheduler.add_job(send_admin_reminder, 'date',
+                              run_date=event_time - timedelta(hours=3),
+                              args=(event.id,))
+        elif event_time - timedelta(minutes=30) > datetime.now():
+            events_scheduler.add_job(send_admin_reminder, 'date',
+                              run_date=event_time - timedelta(minutes=30),
+                              args=(event.id,))
+        evening_reminder_trigger = CronTrigger(hour=19, minute=0)
+        events_scheduler.add_job(send_admin_reminder, evening_reminder_trigger, args=(event.id,))
+
             
             

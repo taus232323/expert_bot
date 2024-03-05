@@ -11,7 +11,8 @@ from handlers.admin.support import change_paid_days
 from settings import ADMIN_USER_IDS, TOKEN, SUPER_ADMIN_USER_IDS
 from keyboards import reply, inline, builders 
 from data.requests import (get_welcome, get_contacts, set_user, get_cases, get_case_by_id, get_services,
-                           get_service_by_id, get_events, get_event_by_id, get_briefing, get_instructions)
+                           get_service_by_id, get_events, get_event_by_id, get_briefing, get_instructions, 
+                           get_admins)
 
 
 admin_hint = "Нажмите на кнопку в меню для просмотра, добавления или изменения информации👇"
@@ -24,9 +25,9 @@ class BriefingStates(StatesGroup):
 
 router = Router()
 
-
+        
 @router.message(CommandStart(deep_link=True))
-async def cmd_start(message: Message, command: CommandObject):
+async def cmd_start(message: Message, command: CommandObject, bot: Bot):
     welcome = await get_welcome()
     user_id = message.from_user.id
     await set_user(user_id, message.from_user.username)
@@ -34,11 +35,9 @@ async def cmd_start(message: Message, command: CommandObject):
     payload_parts = args.split("_")
     payload_type = payload_parts[0]
     if payload_type == "days":
-        print(payload_parts[1])
-        days = int(payload_parts[1])
-        await change_paid_days(days)
+        await handle_days(payload_parts[1])
     else:
-        payload = decode_payload(args)
+        payload = decode_payload(bot, args)
         payload_parts = payload.split("_")
         event_id = payload_parts[1]
         await enroll_user_from_deep_link(message, user_id, event_id)
@@ -54,17 +53,26 @@ async def cmd_start(message: Message, command: CommandObject):
             await message.answer_photo(welcome.picture, welcome.about)
             await message.answer("Выберите вариант из меню ниже👇", reply_markup=reply.user_main)
 
+async def handle_days(bot, days):
+    await change_paid_days(days)
+    for admin in ADMIN_USER_IDS:
+        try:
+            await bot.send_message(admin, f"Ваша подписка продлена на {days} дней")
+        except:
+            pass
+
 @router.message(CommandStart())
 async def cmd_start(message: Message):
     welcome = await get_welcome()
     user_id = message.from_user.id
     await set_user(user_id, message.from_user.username)
-    if message.from_user.id in ADMIN_USER_IDS:
+    if message.from_user.id in SUPER_ADMIN_USER_IDS:
+        await message.answer(f"👋Добро пожаловать, супер администратор {message.from_user.first_name}!",
+                             reply_markup=reply.super_admin_main)
+    elif message.from_user.id in ADMIN_USER_IDS:
         await message.answer(f"👋Добро пожаловать, администратор {message.from_user.first_name}! "
         "Нажмите на кнопку в меню для просмотра, добавления или изменения информации👇",
             reply_markup=reply.admin_main)
-    elif message.from_user.id in SUPER_ADMIN_USER_IDS:
-        await message.answer(f"👋Добро пожаловать, супер администратор {message.from_user.first_name}!")
     else:
         if not welcome:
             await message.answer(f"👋Добро пожаловать, {message.from_user.first_name}!"
@@ -168,7 +176,7 @@ async def event_detail_selected(callback: CallbackQuery, bot: Bot):
     event_for_admin = (f"<b>{event.title}</b>\n\n{event.description}\n\n<b>{formatted_date}</b>\n\n"
         f"🌐Ссылка на событие: {deep_link}")
     event_for_user = (f"<b>{event.title}</b>\n\n{event.description}\n\n<b>{formatted_date}</b>\n\n")
-    if callback.from_user.id in ADMIN_USER_IDS:
+    if callback.from_user.id in (ADMIN_USER_IDS + SUPER_ADMIN_USER_IDS):
         await callback.message.edit_text(event_for_admin, reply_markup=await inline.event_chosen(event.id))
     else:
         await callback.message.edit_text(event_for_user, reply_markup=await inline.enroll_user(event.id))
@@ -231,7 +239,9 @@ async def cancel_operation(callback: CallbackQuery, state: FSMContext):
     await callback.message.delete_reply_markup()
     await state.clear()
     await callback.answer("Операция отменена")
-    if user in ADMIN_USER_IDS:
+    if user in SUPER_ADMIN_USER_IDS:
+        await callback.message.answer(admin_hint, reply_markup=reply.super_admin_main)
+    elif user in ADMIN_USER_IDS:
         await callback.message.answer(admin_hint, reply_markup=reply.admin_main)
     else:
         await callback.message.answer("Выберите вариант из меню ниже👇", reply_markup=reply.user_main)

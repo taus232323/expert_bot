@@ -1,1 +1,1 @@
-from . import admin, common, superadmin, user, payment
+from . import admin, common, superadmin, user

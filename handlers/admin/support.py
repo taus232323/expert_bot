@@ -6,10 +6,10 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 
 from settings import ADMIN_USER_IDS, TOKEN, SUPER_ADMIN_USER_IDS
-from keyboards import reply, inline, builders 
+from keyboards import inline
 from filters.is_admin import IsAdmin
 from filters.is_superadmin import IsSuperAdmin
-from data.requests import get_paid_days, update_paid_days
+from data.requests import get_paid_days, update_paid_days, get_admins
 
 class SuggestIdea(StatesGroup):
     idea = State()
@@ -36,14 +36,23 @@ async def support_selected(message: Message, bot: Bot):
 async def change_paid_days(days: int):
     current_paid_days = await get_paid_days()
     if current_paid_days > 0:
-        print('change')
         new_paid_days = current_paid_days + days
         await update_paid_days(new_paid_days)
-        if not days_scheduler.get_job(change_paid_days):
+        await allow_admin_access()
+        if not days_scheduler.running:
             await schedule_decrease_paid_days()
     else:
-        ADMIN_USER_IDS = ADMIN_USER_IDS[:1]
         await send_lease_reminder()
+        await restrict_admin_access()
+        days_scheduler.remove_all_jobs
+        
+async def restrict_admin_access():
+    global ADMIN_USER_IDS
+    ADMIN_USER_IDS = SUPER_ADMIN_USER_IDS
+    
+async def allow_admin_access():
+    global ADMIN_USER_IDS
+    ADMIN_USER_IDS = await get_admins()
 
 async def send_lease_reminder():
     bot = Bot(TOKEN)
@@ -58,9 +67,7 @@ async def send_lease_reminder():
     await bot.session.close()  
    
 async def schedule_decrease_paid_days():
-    days_scheduler.add_job(change_paid_days, CronTrigger(hour=21, minute=56), args=[-1])
-    days_scheduler.start()
-    print('start')
+    days_scheduler.add_job(change_paid_days, CronTrigger(hour=9, minute=55), args=[-1])
   
        
 @router.callback_query(IsAdmin(), F.data == "suggest_idea")

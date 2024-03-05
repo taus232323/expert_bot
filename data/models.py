@@ -100,10 +100,17 @@ class Welcome(Base):
     picture: Mapped[str] = mapped_column(String(200))
     
 class PaidDays(Base):
-    __tablename__ = "settings"
+    __tablename__ = "paid_days"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     days: Mapped[int] = mapped_column(BigInteger)
+        
+class Admins(Base):
+    __tablename__ = "admins"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    tg_id = mapped_column(BigInteger)
+
   
 
 async def async_main():
