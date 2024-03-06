@@ -3,7 +3,7 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
-from keyboards import inline, builders
+from keyboards import inline
 from filters.is_admin import IsAdmin
 from data.requests import (set_instructions, edit_instructions, delete_instructions, get_briefing, 
 add_question, edit_question, get_instructions, delete_briefing)
@@ -75,7 +75,7 @@ async def edit_instruction(message: Message, state: FSMContext):
 @router.callback_query(IsAdmin(), F.data == "delete_instruction")
 async def delete_instruction(callback: CallbackQuery):
     await delete_instructions()
-    await callback.message.edit_text('Инструкция удалена', reply_markup=inline.admin_get_briefing)
+    await callback.message.edit_text('Инструкция удалена', reply_markup=inline.create_briefing)
 
 @router.callback_query(IsAdmin(), F.data == "create_briefing")
 async def create_briefing(callback: CallbackQuery, state: FSMContext):

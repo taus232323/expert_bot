@@ -1,5 +1,5 @@
 from aiogram import Router, F
-from aiogram.types import Message
+from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
@@ -24,6 +24,17 @@ async def newsletter(message: Message, state: FSMContext):
         newsletter_hint = text.read()
     await message.answer(newsletter_hint)
     await message.answer(
+        f'☝️Сейчас пользователей в Вашей базе: <b>{max_id}</b>\nОтправьте сообщение, которое вы хотите им разослать', 
+                         reply_markup=inline.cancel_action)
+
+@router.callback_query(IsAdmin(), F.data == 'newsletter')
+async def newsletter(callback: CallbackQuery, state: FSMContext):
+    max_id = await get_max_user_id()
+    await state.set_state(Newsletter.message)
+    with open('handlers/admin/newsletter_hint.txt', 'r', encoding='utf-8') as text:
+        newsletter_hint = text.read()
+    await callback.message.edit_text(newsletter_hint)
+    await callback.message.answer(
         f'☝️Сейчас пользователей в Вашей базе: <b>{max_id}</b>\nОтправьте сообщение, которое вы хотите им разослать', 
                          reply_markup=inline.cancel_action)
     

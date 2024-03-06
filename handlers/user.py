@@ -6,10 +6,10 @@ from aiogram.fsm.state import StatesGroup, State
 from aiogram.exceptions import TelegramForbiddenError
 
 
-from settings import ADMIN_USER_IDS
 from keyboards import reply, inline, builders 
-from data.requests import (get_user_by_id, set_participant, set_response, get_service_by_id,
-    delete_user_briefing, get_user_briefing, get_question_by_id, get_user_by_tg, get_event_by_id)
+from data.requests import (get_user_by_id, set_participant, set_response, get_service_by_id, get_admins,
+    delete_user_briefing, get_user_briefing, get_question_by_id, get_user_by_tg, get_event_by_id, get_paid_days)
+from filters.is_admin import IsAdmin
 
 class BriefingStates(StatesGroup):
     question = State()
@@ -34,6 +34,8 @@ async def enroll_user_from_deep_link(message: Message, tg_id, event_id):
      
 @router.callback_query(F.data.startswith("order_service_"))
 async def order_service(callback: CallbackQuery, bot: Bot):
+    days = await get_paid_days(callback.from_user.id)
+    ADMIN_USER_IDS = await get_admins() if days >= 1 else []
     service = await get_service_by_id(callback.data.split("_")[2])
     user = callback.from_user.username
     await callback.message.edit_text(
@@ -153,6 +155,8 @@ async def prepare_report(state: FSMContext):
 async def send_report(message: Message, state: FSMContext):
     data = await state.get_data()
     user = data['user']
+    days = await get_paid_days(message.from_user.id)
+    ADMIN_USER_IDS = await get_admins() if days >= 1 else []
     report = await prepare_report(state)
     user_briefing = await get_user_by_id(user)
     username = user_briefing.username

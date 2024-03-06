@@ -1,16 +1,16 @@
 from aiogram import Router, F, Bot
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.exceptions import TelegramForbiddenError
 
-from settings import ADMIN_USER_IDS, TOKEN, SUPER_ADMIN_USER_IDS
 from filters.is_superadmin import IsSuperAdmin
 from data.requests import get_users, set_admin, get_user_by_id
 from keyboards import reply
 
+
 class AddAdmin(StatesGroup):
     admin_id = State()
+
 
 router = Router()
 
@@ -33,7 +33,7 @@ async def add_new_admin(message: Message, state: FSMContext, bot: Bot):
     await set_admin(user.tg_id)
     await message.answer(f'Администратор {user.username} добавлен')
     try:
-        await bot.send_message(admin_id, 'Вы теперь администратор', reply_markup=reply.admin_main)
+        await bot.send_message(user.tg_id, 'Вы теперь администратор', reply_markup=reply.admin_main)
     except:
         await message.answer('Не удалось отправить сообщение администратору')
 

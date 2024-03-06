@@ -11,7 +11,7 @@ edit_welcome = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='🔙 На главную', callback_data='cancel_action')]])
 
 confirm_delete_welcome = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='✅ Уверен', callback_data='delete_welcome'),
+    [InlineKeyboardButton(text='✅ Подтверждаю', callback_data='delete_welcome'),
         InlineKeyboardButton(text='⛔ Отмена', callback_data='cancel_action')]])
 
 contacts = InlineKeyboardMarkup(inline_keyboard=[
@@ -25,7 +25,7 @@ new_contact = InlineKeyboardMarkup(inline_keyboard=[
             InlineKeyboardButton(text='⛔ Отмена', callback_data='cancel_action')]])
 
 confirm_delete_contacts = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='✅ Согласен', callback_data='delete_contacts'),
+    [InlineKeyboardButton(text='✅ Подтверждаю', callback_data='delete_contacts'),
             InlineKeyboardButton(text='⛔ Отмена', callback_data='cancel_delete')]])
 
 new_case = InlineKeyboardMarkup(inline_keyboard=[
@@ -50,9 +50,9 @@ edit_instruction = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='⛔ Отмена', callback_data='cancel_action')]])
 
 create_briefing = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='✍ Создать', callback_data='create_briefing'),
-            InlineKeyboardButton(text='⛔ Отмена', callback_data='cancel_action')],
-    [InlineKeyboardButton(text='⚠ Инструкция', callback_data='instruction')]])
+    [InlineKeyboardButton(text='✍ Создать брифинг', callback_data='create_briefing')],
+            [InlineKeyboardButton(text='⛔ Отмена', callback_data='cancel_action'),
+    InlineKeyboardButton(text='⚠ Инструкция', callback_data='instruction')]])
 
 in_create_briefing = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text='✍ Добавить', callback_data='add_question'),
@@ -72,7 +72,7 @@ edit_briefing = InlineKeyboardMarkup(inline_keyboard=[
     InlineKeyboardButton(text='⛔ Отмена', callback_data='cancel_action')]])
      
 confirm_delete_briefing = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='✅ Согласен', callback_data='delete_briefing'),
+    [InlineKeyboardButton(text='✅ Подтверждаю', callback_data='delete_briefing'),
             InlineKeyboardButton(text='⛔ Отмена', callback_data='cancel_action')]])
 
 start_briefing = InlineKeyboardMarkup(inline_keyboard=[
@@ -114,7 +114,8 @@ answer_idea = InlineKeyboardMarkup(inline_keyboard=[
 async def go_to_support(client_link):
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='⚡ Перейти',
-                          url=f'https://t.me/PaysAndSupportBot?start={client_link}')]])
+                          url=f'https://t.me/PaysAndSupportBot?start={client_link}')],
+    [InlineKeyboardButton(text='▶ Добавить админа', callback_data='new_admin')]])
     return keyboard
 
 async def case_chosen(case_id):
@@ -147,13 +148,13 @@ async def event_chosen(event_id):
 
 async def confirm_delete_event(event_id):
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='✅Подтверждаю', callback_data=f'delete_event_{event_id}')],
-            [InlineKeyboardButton(text='⚙Изменить', callback_data=f'edit_event_{event_id}'),
-            InlineKeyboardButton(text='⛔Отмена', callback_data='cancel_action')]])
+    [InlineKeyboardButton(text='✅ Подтверждаю', callback_data=f'delete_event_{event_id}')],
+            [InlineKeyboardButton(text='⚙ Изменить', callback_data=f'edit_event_{event_id}'),
+            InlineKeyboardButton(text='⛔ Отмена', callback_data='cancel_action')]])
     return keyboard
      
 async def enroll_user(event_id):
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='💾Записаться', callback_data=f'enroll_user_{event_id}'),
-    InlineKeyboardButton(text='🔙Назад', callback_data='to_main')]])
+    [InlineKeyboardButton(text='💾 Записаться', callback_data=f'enroll_user_{event_id}'),
+    InlineKeyboardButton(text='🔙 Назад', callback_data='to_main')]])
     return keyboard

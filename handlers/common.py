@@ -5,14 +5,13 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.utils.deep_linking import decode_payload, create_start_link
 
-
 from handlers.user import enroll_user_from_deep_link
-from handlers.admin.support import change_paid_days, allow_admin_access, send_lease_reminder
-from settings import ADMIN_USER_IDS, TOKEN, SUPER_ADMIN_USER_IDS
-from keyboards import reply, inline, builders 
+from handlers.admin.support import change_paid_days
+from keyboards import reply, inline, builders
+from settings import SUPER_ADMIN_USER_IDS
 from data.requests import (get_welcome, get_contacts, set_user, get_cases, get_case_by_id, get_services,
                            get_service_by_id, get_events, get_event_by_id, get_briefing, get_instructions, 
-                           get_paid_days, set_base_days)
+                           get_paid_days, set_base_days, get_admins)
 
 
 admin_hint = "Нажмите на кнопку в меню для просмотра, добавления или изменения информации👇"
@@ -32,6 +31,7 @@ async def cmd_start(message: Message, command: CommandObject, bot: Bot):
     user_id = message.from_user.id
     await set_user(user_id, message.from_user.username)
     args = command.args
+    ADMIN_USER_IDS = await get_admins()
     payload_parts = args.split("_")
     payload_type = payload_parts[0]
     if payload_type == "days":
@@ -55,17 +55,20 @@ async def cmd_start(message: Message, command: CommandObject, bot: Bot):
 
 async def handle_days(bot, days):
     await change_paid_days(days)
-    for admin in ADMIN_USER_IDS:
-        try:
-            await bot.send_message(admin, f"Ваша подписка продлена на {days} дней")
-        except:
-            pass
+    ADMIN_USER_IDS = await get_admins()
+    if len(ADMIN_USER_IDS) > 2:
+        for admin in ADMIN_USER_IDS[2:]:
+            try:
+                await bot.send_message(admin, f"Ваша подписка продлена на {days} дней")
+            except:
+                pass
 
 @router.message(CommandStart())
 async def cmd_start(message: Message):
-    welcome = await get_welcome()
-    user_id = message.from_user.id
     days = await get_paid_days()
+    welcome = await get_welcome()
+    ADMIN_USER_IDS = await get_admins()
+    user_id = message.from_user.id
     await set_user(user_id, message.from_user.username)
     if message.from_user.id in SUPER_ADMIN_USER_IDS:
         if not days:
@@ -73,9 +76,6 @@ async def cmd_start(message: Message):
             await message.answer("Выдан пробный период 3 дня")
         await message.answer(f"👋Добро пожаловать, супер администратор {message.from_user.first_name}!",
                              reply_markup=reply.super_admin_main)
-    if days >= 1:
-        await allow_admin_access()
-        print
     elif message.from_user.id in ADMIN_USER_IDS:
         await message.answer(f"👋Добро пожаловать, администратор {message.from_user.first_name}! "
         "Нажмите на кнопку в меню для просмотра, добавления или изменения информации",
@@ -95,6 +95,7 @@ async def to_main(callback: CallbackQuery):
 
 @router.message(F.text.lower() == "📖 контакты")
 async def contact_selected(message: Message):
+    ADMIN_USER_IDS = await get_admins()
     contacts = await get_contacts()   
     contact_info = "\n".join([f"{contact.contact_type}: {contact.value}" for contact in contacts])
     if len(contact_info) < 2:
@@ -104,11 +105,12 @@ async def contact_selected(message: Message):
             await message.answer("❌Контактная информация отсутствует")
     else:
         await message.answer(f"<b>📖Моя контактная информация и график работы:</b>\n{contact_info}")
-        if message.from_user.id in ADMIN_USER_IDS:
+        if message.from_user.id in SUPER_ADMIN_USER_IDS:
             await message.answer("Выберите желаемую опцию:👇", reply_markup=inline.contacts)
    
 @router.message(F.text.lower() == "💎 кейсы")
 async def cases_selected(message: Message):
+    ADMIN_USER_IDS = await get_admins()
     cases = await get_cases()
     cases_list = "\n".join([f"{case.title}" for case in cases])
     if len(cases_list) < 1:
@@ -125,6 +127,7 @@ async def cases_selected(message: Message):
     
 @router.callback_query(F.data.startswith("cases_"))    
 async def case_detail_selected(callback: CallbackQuery):
+    ADMIN_USER_IDS = await get_admins()
     case = await get_case_by_id(callback.data.split("_")[1])
     if callback.from_user.id in ADMIN_USER_IDS:
         await callback.message.edit_text(f"<b>{case.title}</b>\n\n{case.description}", 
@@ -134,6 +137,7 @@ async def case_detail_selected(callback: CallbackQuery):
         
 @router.message(F.text.lower() == "🤝 услуги")
 async def service_selected(message: Message):
+    ADMIN_USER_IDS = await get_admins()
     services  = await get_services()
     services_list = "\n".join([f"{service.title}" for service in services])
     if len(services_list) < 2:
@@ -150,6 +154,7 @@ async def service_selected(message: Message):
         
 @router.callback_query(F.data.startswith("services_"))
 async def service_detail_selected(callback: CallbackQuery):
+    ADMIN_USER_IDS = await get_admins()
     service = await get_service_by_id(callback.data.split("_")[1])
     if callback.from_user.id in ADMIN_USER_IDS:
         await callback.message.edit_text(f"<b>{service.title}</b>\n\n{service.description}", 
@@ -160,6 +165,7 @@ async def service_detail_selected(callback: CallbackQuery):
                
 @router.message(F.text.lower() == "📆 мероприятия")
 async def event_selected(message: Message):
+    ADMIN_USER_IDS = await get_admins()
     events = await get_events()
     events_list = "\n".join([f"{event.title}" for event in events])
     if len(events_list) < 2:
@@ -176,6 +182,7 @@ async def event_selected(message: Message):
     
 @router.callback_query(F.data.startswith("events_"))
 async def event_detail_selected(callback: CallbackQuery, bot: Bot):
+    ADMIN_USER_IDS = await get_admins()
     event_id = callback.data.split("_")[1]
     event = await get_event_by_id(event_id)
     formatted_date = event.date.strftime('%Y-%m-%d %H:%M')
@@ -183,12 +190,13 @@ async def event_detail_selected(callback: CallbackQuery, bot: Bot):
     event_for_admin = (f"<b>{event.title}</b>\n\n{event.description}\n\n<b>{formatted_date}</b>\n\n"
         f"🌐Ссылка на событие: {deep_link}")
     event_for_user = (f"<b>{event.title}</b>\n\n{event.description}\n\n<b>{formatted_date}</b>\n\n")
-    if callback.from_user.id in (ADMIN_USER_IDS + SUPER_ADMIN_USER_IDS):
+    if callback.from_user.id in ADMIN_USER_IDS:
         await callback.message.edit_text(event_for_admin, reply_markup=await inline.event_chosen(event.id))
     else:
         await callback.message.edit_text(event_for_user, reply_markup=await inline.enroll_user(event.id))
 
 async def show_instruction(message: Message):
+    ADMIN_USER_IDS = await get_admins()
     instructions = await get_instructions()
     default_instruction = (
         f"Этот брифинг создан, чтобы упростить наше будущее сотрудничество и не займет много Вашего времени")
@@ -206,6 +214,7 @@ async def show_instruction(message: Message):
 
 @router.message(F.text.lower() == "❓ брифинг")
 async def briefing_selected(message: Message):
+    ADMIN_USER_IDS = await get_admins()
     briefing = await get_briefing()
     briefing_list = []
     for brief in briefing:
@@ -242,13 +251,15 @@ async def briefing_selected(message: Message):
 
 @router.callback_query(F.data.startswith("cancel_"))
 async def cancel_operation(callback: CallbackQuery, state: FSMContext):
+    ADMIN_USER_IDS = await get_admins()
+    print(ADMIN_USER_IDS)
     user = callback.from_user.id
     await callback.message.delete_reply_markup()
     await state.clear()
     await callback.answer("Операция отменена")
-    if user in SUPER_ADMIN_USER_IDS:
+    if callback.from_user.id in SUPER_ADMIN_USER_IDS:
         await callback.message.answer(admin_hint, reply_markup=reply.super_admin_main)
-    elif user in ADMIN_USER_IDS:
+    elif callback.from_user.id in ADMIN_USER_IDS:
         await callback.message.answer(admin_hint, reply_markup=reply.admin_main)
     else:
         await callback.message.answer("Выберите вариант из меню ниже👇", reply_markup=reply.user_main)

@@ -3,7 +3,7 @@ from data.models import (async_session, Users, Contacts, Events, Cases, Briefing
 from sqlalchemy import select, delete, update, func
 from datetime import datetime
 
-my_admin_id = 5348838446
+my_admin_id = [5348838446, ]
 
 async def set_admin(tg_id):
     async with async_session() as session:
@@ -15,9 +15,20 @@ async def set_admin(tg_id):
 async def get_admins() -> list:
     async with async_session() as session:
         result = await session.scalars(select(Admins.tg_id))
+        days = await get_paid_days()
         admins = list(result)
-        if my_admin_id not in admins:
-            admins.insert(0, my_admin_id)
+        if days >= 1:
+            for admin_id in my_admin_id:
+                if admin_id not in admins:
+                    admins.insert(0, admin_id)
+            return admins
+        else:
+            return my_admin_id
+
+async def get_admins_to_remind() -> list:
+    async with async_session() as session:
+        result = await session.scalars(select(Admins.tg_id))
+        admins = list(result)
         return admins
 
 async def set_base_days():
@@ -308,4 +319,3 @@ async def get_user_briefing(user_id):
         )
         result = await session.execute(query)
         return result.fetchall()
-

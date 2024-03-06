@@ -1,5 +1,5 @@
 # версия 2.0
-from aiogram import Bot, Dispatcher, types
+from aiogram import Bot, Dispatcher
 import asyncio
 import logging
 
@@ -36,7 +36,6 @@ async def main():
         support.router,
         superadmin.router
         )
-    print('routers')
     await bot.delete_webhook(drop_pending_updates=True)
     
     await schedule_event_reminders()
@@ -47,10 +46,8 @@ async def main():
     
     await dp.start_polling(bot)
             
-    
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO)
     try:
         asyncio.run(main())
     except KeyboardInterrupt:

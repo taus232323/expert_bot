@@ -5,13 +5,12 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
-from aiogram.exceptions import TelegramForbiddenError
 
-from settings import ADMIN_USER_IDS, TOKEN
+from settings import TOKEN
 from keyboards import inline, builders
 from filters.is_admin import IsAdmin
 from data.requests import (
-    set_event, delete_event, edit_event, get_participants, get_event_by_id, get_events, get_paid_days, update_paid_days) 
+    set_event, delete_event, edit_event, get_participants, get_event_by_id, get_events, get_admins) 
 
 
 router = Router()
@@ -164,6 +163,7 @@ async def check_participants(callback: CallbackQuery):
 
 async def send_admin_reminder(event_id):
     bot = Bot(token=TOKEN, parse_mode='HTML')
+    ADMIN_USER_IDS = await get_admins()
     event = await get_event_by_id(event_id)
     participants = await get_participants(event_id)
     participant_text_list = []
@@ -177,7 +177,7 @@ async def send_admin_reminder(event_id):
     for admin in ADMIN_USER_IDS:
         try:
             await bot.send_message(chat_id=admin, text=message_text, reply_markup=inline.participants_newsletter)
-        except TelegramForbiddenError:
+        except:
             print(f"Не удалось отправить уведомление админу {admin}")
     await bot.session.close() 
 
