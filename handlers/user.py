@@ -34,8 +34,7 @@ async def enroll_user_from_deep_link(message: Message, tg_id, event_id):
      
 @router.callback_query(F.data.startswith("order_service_"))
 async def order_service(callback: CallbackQuery, bot: Bot):
-    days = await get_paid_days(callback.from_user.id)
-    ADMIN_USER_IDS = await get_admins() if days >= 1 else []
+    ADMIN_USER_IDS = await get_admins()
     service = await get_service_by_id(callback.data.split("_")[2])
     user = callback.from_user.username
     await callback.message.edit_text(

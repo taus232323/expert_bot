@@ -56,12 +56,12 @@ async def add_new_admin(message: Message, state: FSMContext, bot: Bot):
   
 async def change_paid_days(days: int):
     current_paid_days = await get_paid_days()
-    if current_paid_days > 0:
-        new_paid_days = current_paid_days + days
+    if current_paid_days >= 0:
+        new_paid_days = current_paid_days + int(days)
         await update_paid_days(new_paid_days)
         if not days_scheduler.running:
             await schedule_decrease_paid_days()
-    else:
+    elif current_paid_days == 0 and days < 0:
         await send_lease_reminder()
         days_scheduler.remove_all_jobs
 
@@ -78,5 +78,5 @@ async def send_lease_reminder():
     await bot.session.close()  
    
 async def schedule_decrease_paid_days():
-    days_scheduler.add_job(change_paid_days, CronTrigger(hour=20, minute=31), args=[-1])
+    days_scheduler.add_job(change_paid_days, CronTrigger(hour=7, minute=0), args=[-1])
   

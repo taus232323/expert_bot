@@ -2,7 +2,6 @@ from aiogram import Router, F, Bot
 from aiogram.types import Message, CallbackQuery
 from aiogram.filters import CommandStart, CommandObject
 from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import StatesGroup, State
 from aiogram.utils.deep_linking import decode_payload, create_start_link
 
 from handlers.user import enroll_user_from_deep_link
@@ -15,12 +14,6 @@ from data.requests import (get_welcome, get_contacts, set_user, get_cases, get_c
 
 
 admin_hint = "Нажмите на кнопку в меню для просмотра, добавления или изменения информации👇"
-
-class BriefingStates(StatesGroup):
-    question = State()
-    waiting_for_answer = State()
-    send_report = State()
-
 
 router = Router()
 
@@ -35,13 +28,17 @@ async def cmd_start(message: Message, command: CommandObject, bot: Bot):
     payload_parts = args.split("_")
     payload_type = payload_parts[0]
     if payload_type == "days":
-        await handle_days(payload_parts[1])
+        await handle_days(bot, payload_parts[1])
     else:
         payload = decode_payload(bot, args)
         payload_parts = payload.split("_")
         event_id = payload_parts[1]
         await enroll_user_from_deep_link(message, user_id, event_id)
-    if message.from_user.id in ADMIN_USER_IDS:
+    if message.from_user.id in SUPER_ADMIN_USER_IDS:
+        await message.answer(f"Дней добавлено в подписку: <b>{payload_parts[1]}</b>")
+        await message.answer(f"👋Добро пожаловать, супер администратор {message.from_user.first_name}!",
+                             reply_markup=reply.super_admin_main)
+    elif message.from_user.id in ADMIN_USER_IDS:
         await message.answer(f"👋Добро пожаловать, администратор {message.from_user.first_name}! "
         "Нажмите на кнопку в меню для просмотра, добавления или изменения информации👇",
             reply_markup=reply.admin_main)
