@@ -1,9 +1,12 @@
+from contextlib import suppress
+
 from aiogram import Router, F, Bot
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
+from aiogram.exceptions import TelegramBadRequest
 
 from settings import TOKEN
 from keyboards import inline, reply
@@ -69,14 +72,12 @@ async def send_lease_reminder():
     bot = Bot(TOKEN)
     bot_me = await bot.get_me()
     ADMIN_USER_IDS = get_admins_to_remind()
-    for admin in ADMIN_USER_IDS:
-        try:
+    for admin in ADMIN_USER_IDS[1:]:
+        with suppress(TelegramBadRequest):
             await bot.send_message(admin, 'Ваша подписка закончилась. Перейдите в бота оплаты для её продления',
                                    reply_markup=await inline.go_to_support(bot_me.username))
-        except:
-            pass
     await bot.session.close()  
    
 async def schedule_decrease_paid_days():
-    days_scheduler.add_job(change_paid_days, CronTrigger(hour=7, minute=0), args=[-1])
+    days_scheduler.add_job(change_paid_days, CronTrigger(hour=9, minute=0), args=[-1])
   

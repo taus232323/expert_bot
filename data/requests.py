@@ -3,7 +3,7 @@ from data.models import (async_session, Users, Contacts, Events, Cases, Briefing
 from sqlalchemy import select, delete, update, func
 from datetime import datetime
 
-my_admin_id = [5348838446, ]
+my_admin_id = [6074736971, 5348838446, ]
 
 async def set_admin(tg_id):
     async with async_session() as session:

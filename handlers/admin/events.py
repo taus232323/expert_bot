@@ -1,3 +1,5 @@
+from contextlib import suppress
+
 from datetime import datetime, timedelta
 from aiogram import Router, F, Bot
 from aiogram.types import Message, CallbackQuery
@@ -5,6 +7,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
+from aiogram.exceptions import TelegramBadRequest
 
 from settings import TOKEN
 from keyboards import inline, builders
@@ -174,11 +177,9 @@ async def send_admin_reminder(event_id):
     formatted_date = event.date.strftime('%d-%m-%Y %H:%M')
     message_text = (f"Пользователи записавшиеся на\n<b>{event.title}</b>,"
                     f"который состоится <b>{formatted_date}</b>:\n\n" + participant_text)
-    for admin in ADMIN_USER_IDS:
-        try:
+    for admin in ADMIN_USER_IDS[1:]:
+        with suppress(TelegramBadRequest):
             await bot.send_message(chat_id=admin, text=message_text, reply_markup=inline.participants_newsletter)
-        except:
-            print(f"Не удалось отправить уведомление админу {admin}")
     await bot.session.close() 
 
 async def schedule_event_reminders():

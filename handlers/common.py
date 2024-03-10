@@ -30,7 +30,8 @@ async def cmd_start(message: Message, command: CommandObject, bot: Bot):
     if payload_type == "days":
         await handle_days(bot, payload_parts[1])
     else:
-        payload = decode_payload(bot, args)
+        payload = decode_payload(args)
+        print(payload)
         payload_parts = payload.split("_")
         event_id = payload_parts[1]
         await enroll_user_from_deep_link(message, user_id, event_id)

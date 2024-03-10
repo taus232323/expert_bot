@@ -1,15 +1,15 @@
+from contextlib import suppress
+
 from aiogram import Router, F, Bot
 from aiogram.types import Message, CallbackQuery
-
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
-from aiogram.exceptions import TelegramForbiddenError
+from aiogram.exceptions import TelegramBadRequest
 
 
 from keyboards import reply, inline, builders 
 from data.requests import (get_user_by_id, set_participant, set_response, get_service_by_id, get_admins,
     delete_user_briefing, get_user_briefing, get_question_by_id, get_user_by_tg, get_event_by_id, get_paid_days)
-from filters.is_admin import IsAdmin
 
 class BriefingStates(StatesGroup):
     question = State()
@@ -21,6 +21,7 @@ router = Router()
 
 
 async def enroll_user_from_deep_link(message: Message, tg_id, event_id):
+    print(f"Enrolling user {tg_id} to event {event_id}")
     event = await get_event_by_id(event_id)
     formatted_date = event.date.strftime('%d-%m-%Y- %H:%M')
     event_details = f"\n<b>{event.title}</b>.\n🗓Дата и время события: \n<b>{formatted_date}</b>"
@@ -39,12 +40,10 @@ async def order_service(callback: CallbackQuery, bot: Bot):
     user = callback.from_user.username
     await callback.message.edit_text(
         f"🤝Вы заказали услугу <b>{service.title}</b>. Я Вам напишу в самое ближайшее время")
-    for admin in ADMIN_USER_IDS:
-        try:
+    for admin in ADMIN_USER_IDS[1:]:
+        with suppress(TelegramBadRequest):
             await bot.send_message(chat_id=admin, 
         text=f"👍Заказ услуги <b>{service.title}</b> от @{user}. Этот клиент очень хочет, чтобы Вы ему написали🙏")
-        except TelegramForbiddenError:
-            print(f"Не удалось отправить сообщение админу @{admin}")
             
 @router.callback_query(F.data.startswith("enroll_"))
 async def enroll_user(callback: CallbackQuery):
@@ -154,25 +153,23 @@ async def prepare_report(state: FSMContext):
 async def send_report(message: Message, state: FSMContext):
     data = await state.get_data()
     user = data['user']
-    days = await get_paid_days(message.from_user.id)
+    days = await get_paid_days()
     ADMIN_USER_IDS = await get_admins() if days >= 1 else []
     report = await prepare_report(state)
     user_briefing = await get_user_by_id(user)
     username = user_briefing.username
-    first_part = report[0]
-    left_parts = report[1:]
     await state.clear()
-    if len(report) > 1:
-        for admin in ADMIN_USER_IDS:
-            try:
+    with suppress(TelegramBadRequest, IndexError):
+        first_part = report[0]
+        left_parts = report[1:]
+        for admin in ADMIN_USER_IDS[1:]:
+            print(admin)
+            if len(report) > 1:
                 await message.bot.send_message(
                     chat_id=admin, text=f"<b>✅✅✅Заполненный брифинг от✅✅✅</b>\n@{username}:\n\n{first_part}")
                 for part in left_parts:
                     await message.bot.send_message(
                         chat_id=admin, text=f"<b>✔✔✔Продолжение брифинга от✔✔✔</b>\n@{username}:\n\n{part}")
-            except TelegramForbiddenError:
-                print(f"❌Не удалось отправить уведомление админу {admin}")   
-    else:
-        for admin in ADMIN_USER_IDS:
-            await message.bot.send_message(
-                chat_id=admin, text=f"<b>✅✅✅Заполненный брифинг от✅✅✅</b>\n@{username}:\n\n{report[0]}")
+            else:
+                await message.bot.send_message(
+                    chat_id=admin, text=f"<b>✅✅✅Заполненный брифинг от✅✅✅</b>\n@{username}:\n\n{report[0]}")
