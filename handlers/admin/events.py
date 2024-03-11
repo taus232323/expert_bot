@@ -165,7 +165,8 @@ async def check_participants(callback: CallbackQuery):
             await callback.message.edit_text(message_text, reply_markup=inline.participants_newsletter)
 
 async def send_admin_reminder(event_id):
-    bot = Bot(token=TOKEN, parse_mode='HTML')
+    bot = Bot(token=TOKEN)
+    bot.default.parse_mode = 'HTML'
     ADMIN_USER_IDS = await get_admins()
     event = await get_event_by_id(event_id)
     participants = await get_participants(event_id)
@@ -190,15 +191,15 @@ async def schedule_event_reminders():
             events_scheduler.add_job(send_admin_reminder, 'date', 
                               run_date=event_time - timedelta(days=1), 
                               args=(event.id,))
-        elif event_time - timedelta(hours=3) > datetime.now():
+        elif event_time - timedelta(hours=2) > datetime.now():
             events_scheduler.add_job(send_admin_reminder, 'date',
-                              run_date=event_time - timedelta(hours=3),
+                              run_date=event_time - timedelta(hours=2),
                               args=(event.id,))
-        elif event_time - timedelta(minutes=30) > datetime.now():
+        elif event_time - timedelta(minutes=5) > datetime.now():
             events_scheduler.add_job(send_admin_reminder, 'date',
-                              run_date=event_time - timedelta(minutes=30),
+                              run_date=event_time - timedelta(minutes=5),
                               args=(event.id,))
-        evening_reminder_trigger = CronTrigger(hour=19, minute=0)
+        evening_reminder_trigger = CronTrigger(hour=19, minute=0, end_date=event_time, jitter=300)
         events_scheduler.add_job(send_admin_reminder, evening_reminder_trigger, args=(event.id,))
 
             
