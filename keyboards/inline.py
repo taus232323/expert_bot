@@ -32,6 +32,10 @@ new_case = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='✍ Добавить', callback_data='add_case'),
             InlineKeyboardButton(text='⛔ Отмена', callback_data='cancel_action')]])
 
+user_got_case = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='❓ Пройти брифинг', callback_data='show_instruction')],
+    [InlineKeyboardButton(text='⛔ Отмена', callback_data='cancel_action')]])
+
 new_service = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='✍ Добавить', callback_data='add_service'),
             InlineKeyboardButton(text='⛔ Отмена', callback_data='cancel_action')]])
@@ -93,11 +97,6 @@ briefing_finished = InlineKeyboardMarkup(inline_keyboard=[
      [InlineKeyboardButton(text='🔄 Сначала', callback_data='restart_briefing'),
     InlineKeyboardButton(text='🔙 Меню', callback_data='to_main')]])
     
-    
-participants_newsletter = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='✍ Сделать рассылку', callback_data='newsletter'),
-     InlineKeyboardButton(text='⛔ Отмена', callback_data='cancel_action')]])
-
 cancel_action = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='⛔ Отмена', callback_data='cancel_action')]])
 
@@ -134,7 +133,8 @@ async def service_chosen(service_id):
 
 async def order_service(service_id):
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='🤝Заказать', callback_data=f'order_service_{service_id}')],
+    [InlineKeyboardButton(text='🤝 Заказать услугу', callback_data=f'order_service_{service_id}')],
+    [InlineKeyboardButton(text='❓ Пройти брифинг', callback_data='show_instruction')],
     [InlineKeyboardButton(text='⛔Отмена', callback_data='cancel_action')]])
     return keyboard
 
@@ -143,7 +143,16 @@ async def event_chosen(event_id):
     [InlineKeyboardButton(text='⚙Изменить', callback_data=f'edit_event_{event_id}'),
     InlineKeyboardButton(text='❌Удалить', callback_data=f'predelete_event_{event_id}')],
     [InlineKeyboardButton(text='⛔Отмена', callback_data='cancel_action'),
-     InlineKeyboardButton(text="🚻Участники", callback_data=f'participants_{event_id}')]])
+     InlineKeyboardButton(text="🚻Участники", callback_data=f'participants_{event_id}')],
+    [InlineKeyboardButton(text='⏰ Напоминания участникам', callback_data=f'edit_reminders_{event_id}')]])
+    return keyboard
+
+async def event_reminders_kb(event_id):
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='1️⃣ Дни', callback_data=f'set_reminder_1_{event_id}'),
+    InlineKeyboardButton(text='2️⃣ Часы', callback_data=f'set_reminder_2_{event_id}')],
+    [InlineKeyboardButton(text='3️⃣ Минуты', callback_data=f'set_reminder_3_{event_id}'),
+    InlineKeyboardButton(text='⛔ Отмена', callback_data='cancel_action')]])
     return keyboard
 
 async def confirm_delete_event(event_id):

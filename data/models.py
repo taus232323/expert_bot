@@ -1,4 +1,4 @@
-from sqlalchemy import BigInteger, ForeignKey, DateTime, String
+from sqlalchemy import BigInteger, ForeignKey, DateTime, String, Integer
 from sqlalchemy.orm import relationship, mapped_column, DeclarativeBase, Mapped
 from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
 from settings import SQLALCHEMY_URL
@@ -52,8 +52,20 @@ class Events(Base):
     title: Mapped[str] = mapped_column(String(100))
     description: Mapped[str] = mapped_column(String(1024))
     date: Mapped[DateTime] = mapped_column(DateTime)
-    
+
+    reminders_rel: Mapped[List['Reminders']] = relationship(back_populates="event_rel")    
     participants_rel: Mapped[List['Participants']] = relationship(back_populates="event_rel")
+    
+class Reminders(Base):
+    __tablename__ = "reminders"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    event: Mapped[int] = mapped_column(ForeignKey("events.id", ondelete="CASCADE"))
+    reminder_num: Mapped[int] = mapped_column(Integer)
+    time: Mapped[DateTime] = mapped_column(DateTime)
+    message: Mapped[str] = mapped_column(String(1000))
+
+    event_rel: Mapped['Events'] = relationship(back_populates="reminders_rel")
 
 class Participants(Base):
     __tablename__ = "participants"

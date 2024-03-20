@@ -1,7 +1,7 @@
-from data.models import (async_session, Users, Contacts, Events, Cases, Briefing, 
+from data.models import (async_session, Users, Contacts, Events, Cases, Briefing, Reminders,
                                  Services, Participants, Instructions, Welcome, UserBriefing, PaidDays, Admins)
 from sqlalchemy import select, delete, update, func
-from datetime import datetime
+from datetime import datetime, timedelta
 
 my_admin_id = [6074736971, 5348838446, ]
 
@@ -179,6 +179,7 @@ async def set_event(data):
 async def delete_event(event_id: int):
     async with async_session() as session:
         await session.execute(delete(Participants).where(Participants.event == event_id))
+        await session.execute(delete(Reminders).where(Reminders.event == event_id))
         await session.execute(delete(Events).where(Events.id == event_id))
         await session.commit()
 
@@ -190,6 +191,11 @@ async def edit_event(data):
                 Events.description: data['description'],
                 Events.date: data['date']}))
         await session.commit()
+
+async def get_max_event_id() -> int:
+    async with async_session() as session:
+        max_id = await session.scalar(select(func.max(Events.id)))
+    return int(max_id)
 
 async def set_participant(tg_id, event_id):
     async with async_session() as session:
@@ -205,7 +211,50 @@ async def set_participant(tg_id, event_id):
             return True
         else:
             return False 
+
+async def set_base_reminders(event_id):
+    async with async_session() as session:
+        result = await session.execute(select(Reminders).where(Reminders.event == event_id))
+        reminders = result.scalars().all()
+        if not reminders:
+            event = await session.get(Events, event_id)
+            formatted_date = event.date.strftime(f'%d.%m.%Y в %H:%M')
+            default_message = (
+            'Здравствуйте, увлекательное путешествие в мир знаний уже на пороге! Скоро стартует '
+            f'{event.title}, который расширит ваши горизонты и предоставит ценные инсайты. '
+            f'Мы будем рады видеть вас {formatted_date}.')
+            event_time = event.date
+            times = [event_time - timedelta(days=1), event_time - timedelta(hours=2),
+                     event_time - timedelta(minutes=5)]
+            for i, time in enumerate(times, start=1):
+                base_reminder = Reminders(event=event_id, reminder_num=i, time=time, message=default_message)
+                session.add(base_reminder)
+            await session.commit()
         
+async def set_custom_reminder(data):
+    async with async_session() as session:
+        reminder = await session.scalar(select(Reminders.id).where(
+                Reminders.reminder_num == data['reminder_num'],
+                Reminders.event == data['event']))
+        await session.execute(
+            update(Reminders).where(Reminders.id == reminder).values({
+                Reminders.time: data['time'],
+                Reminders.message: data['message']}))
+        await session.commit()
+
+async def get_event_reminders(event_id: int):
+    async with async_session() as session:
+        result = await session.execute(select(Reminders).where(Reminders.event == event_id))
+        reminders = result.scalars().all()
+        return reminders
+
+async def get_reminder_message(event_id: int, reminder_num: int):
+    async with async_session() as session:
+        reminder = await session.scalar(select(Reminders).where(
+                Reminders.reminder_num == reminder_num,
+                Reminders.event == event_id))
+        return reminder.message
+
 async def get_participants(event_id: int):
     async with async_session() as session:
         participants = await session.execute(select(Participants.user).where(Participants.event == event_id))

@@ -23,19 +23,22 @@ class EditWelcome(StatesGroup):
     about = State()    
     
 
-@router.message(IsAdmin(), F.text.lower() == "👋 приветствие")    
+@router.message(IsAdmin(), F.text.lower() == "👋 тг-визитка")    
 async def welcome_selected(message: Message):
     welcome = await get_welcome()
     if welcome:
         await message.answer_photo(welcome.picture, welcome.about, reply_markup=inline.edit_welcome)
     else:
-        await message.answer('Вы ещё не добавили приветственного сообщения. Хотите сделать это сейчас?',
+        await message.answer('Вы ещё не добавили телеграм-визитку(это первое что я напишу Вашему '
+                             'клиенту поле того, как он нажмёт кнопку START). Хотите сделать это сейчас?',
                              reply_markup=inline.new_welcome)
         
 @router.callback_query(IsAdmin(), F.data == "add_welcome")
 async def add_welcome(callback: CallbackQuery, state: FSMContext):
-    await callback.message.edit_text('Для начала отправьте своё самое лучшее фото',
-                                     reply_markup=inline.cancel_action)
+    await callback.message.edit_text(f'📷 Для начала отправьте своё самое лучшее фото!\n\n'
+        '⚠️ Подробная инструкция и показательные примеры приветствия (телеграм-визитки) '
+        'Вы найдете на нашем канале @botpbu - перейдите в закрепленное сообщение на канале и '
+        'выберете хештег #Телеграмвизитка', reply_markup=inline.cancel_action)
     await  state.set_state(AddWelcome.picture)
 
 @router.message(IsAdmin(), AddWelcome.picture)
@@ -64,7 +67,7 @@ async def add_welcome_about(message: Message, state: FSMContext):
 @router.callback_query(IsAdmin(), F.data == "edit_welcome")
 async def edit_welcome_selected(callback: CallbackQuery, state: FSMContext):
     await callback.message.delete_reply_markup()
-    await callback.message.answer('Пришлите фото которое ещё лучше предыдущего', reply_markup=inline.cancel_action)
+    await callback.message.answer('📷 Пришлите фото которое ещё лучше предыдущего!', reply_markup=inline.cancel_action)
     await state.set_state(EditWelcome.picture)
     
 @router.message(IsAdmin(), EditWelcome.picture)

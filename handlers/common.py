@@ -131,9 +131,10 @@ async def case_detail_selected(callback: CallbackQuery):
         await callback.message.edit_text(f"<b>{case.title}</b>\n\n{case.description}", 
                                          reply_markup=await inline.case_chosen(case.id))
     else:
-        await callback.message.edit_text(f"<b>{case.title}</b>\n\n{case.description}")
+        await callback.message.edit_text(f"<b>{case.title}</b>\n\n{case.description}",
+                                         reply_markup=inline.user_got_case)
         
-@router.message(F.text.lower() == "🤝 услуги")
+@router.message(F.text.lower() == "🟢 услуги")
 async def service_selected(message: Message):
     ADMIN_USER_IDS = await get_admins()
     services  = await get_services()
@@ -177,13 +178,13 @@ async def event_selected(message: Message):
                              reply_markup=await builders.admin_get_events())
         else:
             await message.answer("👀Мои самые интересные мероприятия:", reply_markup=await builders.get_events_kb())
-    
+
 @router.callback_query(F.data.startswith("events_"))
 async def event_detail_selected(callback: CallbackQuery, bot: Bot):
     ADMIN_USER_IDS = await get_admins()
     event_id = callback.data.split("_")[1]
     event = await get_event_by_id(event_id)
-    formatted_date = event.date.strftime('%Y-%m-%d %H:%M')
+    formatted_date = event.date.strftime(f'%Y.%m.%d в %H:%M')
     deep_link = await create_start_link(bot, f'event_{event_id}', encode=True)
     event_for_admin = (f"<b>{event.title}</b>\n\n{event.description}\n\n<b>{formatted_date}</b>\n\n"
         f"🌐Ссылка на событие: {deep_link}")
@@ -192,6 +193,11 @@ async def event_detail_selected(callback: CallbackQuery, bot: Bot):
         await callback.message.edit_text(event_for_admin, reply_markup=await inline.event_chosen(event.id))
     else:
         await callback.message.edit_text(event_for_user, reply_markup=await inline.enroll_user(event.id))
+
+@router.callback_query(F.data == "show_instruction")
+async def show_inst(callback: CallbackQuery):
+    await callback.message.delete_reply_markup()
+    await briefing_selected(callback.message)
 
 async def show_instruction(message: Message):
     ADMIN_USER_IDS = await get_admins()

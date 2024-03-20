@@ -61,7 +61,7 @@ async def admin_get_events():
     for event in events:
         keyboard.button(text=f"👏{event.title}", callback_data=f'events_{event.id}')
         i += 1
-    keyboard.button(text='✍Добавить мероприятие', callback_data='add_event')
+    keyboard.button(text='✍Добавить ещё', callback_data='add_event')
     keyboard.button(text='⛔Отмена', callback_data='cancel_action')
     return keyboard.adjust(*[1] * i, 2).as_markup()
 
