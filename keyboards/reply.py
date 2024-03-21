@@ -12,7 +12,7 @@ user_main = ReplyKeyboardMarkup(
 
 admin_main = ReplyKeyboardMarkup(
     keyboard=[
-        [KeyboardButton(text='👋 Приветствие'), KeyboardButton(text='📖 Контакты')],
+        [KeyboardButton(text='👋 Телеграм визитка'), KeyboardButton(text='📖 Контакты')],
         [KeyboardButton(text='🟢 Услуги'), KeyboardButton(text='💎 Кейсы')],
         [KeyboardButton(text='❓ Брифинг'), KeyboardButton(text='📆 Мероприятия')],
         [KeyboardButton(text='📣 Рассылка'), KeyboardButton(text='🛠 Поддержка')]],
@@ -22,7 +22,7 @@ admin_main = ReplyKeyboardMarkup(
 
 super_admin_main = ReplyKeyboardMarkup(
     keyboard=[
-        [KeyboardButton(text='👋 Тг-визитка'), KeyboardButton(text='📖 Контакты')],
+        [KeyboardButton(text='👋 Телеграм визитка'), KeyboardButton(text='📖 Контакты')],
         [KeyboardButton(text='🟢 Услуги'), KeyboardButton(text='💎 Кейсы')],
         [KeyboardButton(text='❓ Брифинг'), KeyboardButton(text='📆 Мероприятия')],
         [KeyboardButton(text='📣 Рассылка'), KeyboardButton(text='▶ Добавить админа')]],
