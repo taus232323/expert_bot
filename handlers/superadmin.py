@@ -19,6 +19,7 @@ async def add_admin_chosed(message: Message, state: FSMContext):
     users = await get_users()
     user_info = "\n".join([f"id:{user.id} @{user.username}" for user in users])
     parts = []
+    print('parts')
     while len(user_info) > 0:
         if len(user_info) <= 4000:
             parts.append(user_info)

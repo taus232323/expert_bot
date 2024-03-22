@@ -113,7 +113,7 @@ answer_idea = InlineKeyboardMarkup(inline_keyboard=[
 async def go_to_support(client_link):
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='⚡ Перейти',
-                          url=f'https://t.me/MstBiBot?start={client_link}')],
+                          url=f'https://t.me/PaysAndSupportBot?start={client_link}')],
     [InlineKeyboardButton(text='▶ Добавить админа', callback_data='new_admin')]])
     return keyboard
 
