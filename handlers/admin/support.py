@@ -81,5 +81,5 @@ async def send_lease_reminder():
     await bot.session.close()  
    
 async def schedule_decrease_paid_days():
-    days_scheduler.add_job(change_paid_days, CronTrigger(hour=17, minute=7), args=[-1])
+    days_scheduler.add_job(change_paid_days, CronTrigger(hour=9, minute=0), args=[-1])
   
