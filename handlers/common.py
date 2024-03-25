@@ -80,7 +80,7 @@ async def cmd_start(message: Message):
             reply_markup=reply.admin_main)
     else:
         if not welcome:
-            await message.answer(f"👋Добро пожаловать, {message.from_user.first_name}!"
+            await message.answer(f"👋Добро пожаловать, {message.from_user.first_name}! "
                 "Выберите вариант из меню ниже", reply_markup=reply.user_main)
         else:
             await message.answer_photo(welcome.picture, welcome.about)
