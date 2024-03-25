@@ -184,7 +184,7 @@ async def event_detail_selected(callback: CallbackQuery, bot: Bot):
     ADMIN_USER_IDS = await get_admins()
     event_id = callback.data.split("_")[1]
     event = await get_event_by_id(event_id)
-    formatted_date = event.date.strftime(f'%Y.%m.%d в %H:%M')
+    formatted_date = event.date.strftime(f'%d.%m.%Y в %H:%M')
     deep_link = await create_start_link(bot, f'event_{event_id}', encode=True)
     event_for_admin = (f"<b>{event.title}</b>\n\n{event.description}\n\n<b>{formatted_date}</b>\n\n"
         f"🌐Ссылка на событие: {deep_link}")
