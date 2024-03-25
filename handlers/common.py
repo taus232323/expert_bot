@@ -55,7 +55,7 @@ async def handle_days(bot, days):
     await change_paid_days(days)
     ADMIN_USER_IDS = await get_admins()
     if len(ADMIN_USER_IDS) > 2:
-        for admin in ADMIN_USER_IDS[2:]:
+        for admin in ADMIN_USER_IDS:
             try:
                 await bot.send_message(admin, f"Ваша подписка продлена на {days} дней")
             except:
@@ -106,7 +106,7 @@ async def contact_selected(message: Message):
         if message.from_user.id in SUPER_ADMIN_USER_IDS:
             await message.answer("Выберите желаемую опцию:👇", reply_markup=inline.contacts)
    
-@router.message(F.text.lower() == "💎 кейсы")
+@router.message(F.text.lower() == "💎 кейсы и отзывы")
 async def cases_selected(message: Message):
     ADMIN_USER_IDS = await get_admins()
     cases = await get_cases()
@@ -134,7 +134,7 @@ async def case_detail_selected(callback: CallbackQuery):
         await callback.message.edit_text(f"<b>{case.title}</b>\n\n{case.description}",
                                          reply_markup=inline.user_got_case)
         
-@router.message(F.text.lower() == "🟢 услуги")
+@router.message(F.text.lower() == "🟢 услуги и товары")
 async def service_selected(message: Message):
     ADMIN_USER_IDS = await get_admins()
     services  = await get_services()

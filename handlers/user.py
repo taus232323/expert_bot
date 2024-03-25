@@ -4,12 +4,13 @@ from aiogram import Router, F, Bot
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
-from aiogram.exceptions import TelegramBadRequest
+from aiogram.exceptions import TelegramForbiddenError
 
 
 from keyboards import reply, inline, builders 
 from data.requests import (get_user_by_id, set_participant, set_response, get_service_by_id, get_admins,
-    delete_user_briefing, get_user_briefing, get_question_by_id, get_user_by_tg, get_event_by_id, get_paid_days)
+    delete_user_briefing, get_user_briefing, get_question_by_id, get_user_by_tg, get_event_by_id, get_paid_days,
+    get_last_question_number)
 
 class BriefingStates(StatesGroup):
     question = State()
@@ -40,8 +41,8 @@ async def order_service(callback: CallbackQuery, bot: Bot):
     user = callback.from_user.username
     await callback.message.edit_text(
         f"🤝Вы заказали услугу <b>{service.title}</b>. Я Вам напишу в самое ближайшее время")
-    for admin in ADMIN_USER_IDS[1:]:
-        with suppress(TelegramBadRequest):
+    for admin in ADMIN_USER_IDS:
+        with suppress(TelegramForbiddenError):
             await bot.send_message(chat_id=admin, 
         text=f"👍Заказ услуги <b>{service.title}</b> от @{user}. Этот клиент очень хочет, чтобы Вы ему написали🙏")
             
@@ -78,12 +79,14 @@ async def start_briefing(callback: CallbackQuery, state: FSMContext):
 async def send_next_question(message: Message, state: FSMContext):
     data = await state.get_data()
     current_index = data['question']
-    try:
+    max_questions = await get_last_question_number()
+    if current_index <= max_questions:
+        print('while')
         question = await get_question_by_id(current_index)
         answers = await builders.generate_answer(current_index)  
         await message.answer(question, reply_markup=answers)
         await state.set_state(BriefingStates.waiting_for_answer)
-    except TypeError:
+    else:
         await message.answer("Брифинг завершен, спасибо за ваши ответы!🤝",
                                           reply_markup=inline.briefing_finished)
         await send_report(message, state)
@@ -159,11 +162,13 @@ async def send_report(message: Message, state: FSMContext):
     user_briefing = await get_user_by_id(user)
     username = user_briefing.username
     await state.clear()
-    with suppress(TelegramBadRequest, IndexError):
+    try:
         first_part = report[0]
         left_parts = report[1:]
-        for admin in ADMIN_USER_IDS[1:]:
-            print(admin)
+    except IndexError:
+        print('IndexError')
+    for admin in ADMIN_USER_IDS:
+        try:    
             if len(report) > 1:
                 await message.bot.send_message(
                     chat_id=admin, text=f"<b>✅✅✅Заполненный брифинг от✅✅✅</b>\n@{username}:\n\n{first_part}")
@@ -173,3 +178,5 @@ async def send_report(message: Message, state: FSMContext):
             else:
                 await message.bot.send_message(
                     chat_id=admin, text=f"<b>✅✅✅Заполненный брифинг от✅✅✅</b>\n@{username}:\n\n{report[0]}")
+        except TelegramForbiddenError:
+            print(f'Не удалось отправить сообщение админу {admin}')

@@ -67,7 +67,7 @@ async def admin_get_events():
 
 async def generate_answer(line):
     answers = await get_answer_by_id(line)
-    if ";" in answers:
+    if answers and ";" in answers:
         buttons = [button.strip() for button in answers.split(';')]
         keyboard = ReplyKeyboardBuilder()
         for answer in buttons:

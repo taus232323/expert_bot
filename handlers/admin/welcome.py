@@ -47,8 +47,8 @@ async def add_welcome_picture(message: Message, state: FSMContext):
         await state.update_data(picture=message.photo[-1].file_id)
         await state.set_state(AddWelcome.about)
         await message.answer(
-    'Теперь расскажите вкратце кто Вы  и чем занимаетесь. Остальное мы позже добавим в соответствующие пункты меню', 
-                        reply_markup=inline.cancel_action)
+    'Теперь расскажите вкратце(не более 100 символов) кто Вы  и чем занимаетесь. Остальное мы позже добавим в '
+    'соответствующие пункты меню', reply_markup=inline.cancel_action)
     else:
         await message.answer('Вы отправили не самое лучшее фото, или отменили сжатие. Попробуйте ещё раз',
                              reply_markup=inline.cancel_action)
@@ -56,6 +56,9 @@ async def add_welcome_picture(message: Message, state: FSMContext):
     
 @router.message(IsAdmin(), AddWelcome.about)
 async def add_welcome_about(message: Message, state: FSMContext):
+    if len(message.text) > 1000:
+        await message.answer('Текст слишком длинный')
+        return
     await state.update_data(about=message.text)
     data = await state.get_data()
     await set_welcome(data)
@@ -76,7 +79,8 @@ async def edit_welcome_picture(message: Message, state: FSMContext):
         await state.update_data(picture=message.photo[-1].file_id)
         await state.set_state(EditWelcome.about)
         await message.answer(
-            'Теперь добавьте более актуальную и интересную информацию о себе', reply_markup=inline.cancel_action)
+            'Теперь добавьте более актуальную и интересную информацию о себе, но не более 1000 символов', 
+            reply_markup=inline.cancel_action)
     else:
         await message.answer('Вы отправили не самое лучшее фото, или отменили сжатие. Попробуйте ещё раз', 
                              reply_markup=inline.cancel_action)
@@ -84,6 +88,9 @@ async def edit_welcome_picture(message: Message, state: FSMContext):
     
 @router.message(IsAdmin(), EditWelcome.about)
 async def edit_welcome_about(message: Message, state: FSMContext):
+    if len(message.text) > 1000:
+        await message.answer('Текст слишком длинный')
+        return
     await state.update_data(about=message.text)
     data = await state.get_data()
     await edit_welcome(data)

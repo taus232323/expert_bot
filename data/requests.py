@@ -280,6 +280,11 @@ async def get_question_by_id(question_id):
         question = await session.scalar(select(Briefing.question).where(Briefing.id == question_id))
         return question
     
+async def get_last_question_number() -> int:
+    async with async_session() as session:
+        number = await session.scalar(select(func.max(Briefing.id)))
+    return int(number)
+    
 async def get_answer_by_id(answer_id):
     async with async_session() as session:
         answer = await session.scalar(select(Briefing.answer).where(Briefing.id == answer_id))

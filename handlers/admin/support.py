@@ -6,7 +6,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
-from aiogram.exceptions import TelegramBadRequest
+from aiogram.exceptions import TelegramForbiddenError
 
 from settings import TOKEN
 from keyboards import inline, reply
@@ -59,25 +59,27 @@ async def add_new_admin(message: Message, state: FSMContext, bot: Bot):
   
 async def change_paid_days(days: int):
     current_paid_days = await get_paid_days()
-    if current_paid_days >= 0:
+    if current_paid_days == 0 and days < 0:
+        await send_lease_reminder()
+        days_scheduler.remove_all_jobs()
+    elif current_paid_days >= 0:
         new_paid_days = current_paid_days + int(days)
         await update_paid_days(new_paid_days)
         if not days_scheduler.running:
             await schedule_decrease_paid_days()
-    elif current_paid_days == 0 and days < 0:
-        await send_lease_reminder()
-        days_scheduler.remove_all_jobs
 
 async def send_lease_reminder():
     bot = Bot(TOKEN)
     bot_me = await bot.get_me()
-    ADMIN_USER_IDS = get_admins_to_remind()
-    for admin in ADMIN_USER_IDS[1:]:
-        with suppress(TelegramBadRequest):
+    ADMIN_USER_IDS = await get_admins_to_remind()
+    for admin in ADMIN_USER_IDS:
+        try:
             await bot.send_message(admin, 'Ваша подписка закончилась. Перейдите в бота оплаты для её продления',
                                    reply_markup=await inline.go_to_support(bot_me.username))
+        except TelegramForbiddenError:
+            print(f'Не удалось отправить сообщение админу {admin}')
     await bot.session.close()  
    
 async def schedule_decrease_paid_days():
-    days_scheduler.add_job(change_paid_days, CronTrigger(hour=9, minute=0), args=[-1])
+    days_scheduler.add_job(change_paid_days, CronTrigger(hour=17, minute=7), args=[-1])
   

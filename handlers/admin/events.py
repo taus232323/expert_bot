@@ -7,7 +7,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
-from aiogram.exceptions import TelegramBadRequest
+from aiogram.exceptions import TelegramForbiddenError
 
 from settings import TOKEN
 from keyboards import inline, builders, reply
@@ -82,7 +82,7 @@ async def add_event_description(message: Message, state: FSMContext):
 @router.message(IsAdmin(), AddEvent.date)
 async def add_event_date(message: Message, state: FSMContext):
     try:
-        date = datetime.strptime(message.text, '%d.%m.%Y %H:%M')
+        date = datetime.strptime(message.text, f'%d.%m.%Y %H:%M')
     except ValueError:
         await message.answer(
             'Неверный формат даты и времени. Пожалуйста, введите дату и время события в формате\nДД.ММ.ГГГГ ЧЧ:ММ')
@@ -217,7 +217,7 @@ async def edit_event_description(message: Message, state: FSMContext):
 @router.message(IsAdmin(), EditEvent.date)
 async def edit_event_date(message: Message, state: FSMContext):
     try:
-        date = datetime.strptime(message.text, f'%d.%m.%Y в %H:%M')
+        date = datetime.strptime(message.text, f'%d.%m.%Y %H:%M')
     except ValueError:
         await message.answer(
             f'Неверный формат даты и времени. Пожалуйста, введите дату и время события в формате\nДД.ММ.ГГГГ ЧЧ:ММ')
@@ -228,20 +228,16 @@ async def edit_event_date(message: Message, state: FSMContext):
     await state.update_data(date=date)
     data = await state.get_data()
     event_id = data['_id']
-    events_scheduler.remove_job(event_id)
     await edit_event(data)
     await state.clear()
     reminders = await get_event_reminders(event_id)
     if reminders:
         await schedule_custom_reminder(event_id)
     else:
-        await schedule_base_event_reminders()
+        await schedule_base_event_reminders(event_id)
     await message.answer('Событие успешно изменено. Теперь Вы можете изменить уведомления, '
                          'которые получат участники перед мероприятием', 
-                         reply_markup=await inline.event_reminders_kb())
-
-# async def remove_old_reminders(event_id):
-#     events_scheduler.remove_job(event_id)
+                         reply_markup=await inline.event_reminders_kb(event_id))
 
 @router.callback_query(IsAdmin(), F.data.startswith("participants_"))
 async def check_participants(callback: CallbackQuery):
@@ -275,14 +271,13 @@ async def send_admin_reminder(event_id):
     formatted_date = event.date.strftime('%d-%m-%Y %H:%M')
     message_text = (f"Пользователи записавшиеся на\n<b>{event.title}</b>,"
                     f"который состоится <b>{formatted_date}</b>:\n\n" + participant_text)
-    for admin in ADMIN_USER_IDS[1:]:
-        with suppress(TelegramBadRequest):
+    for admin in ADMIN_USER_IDS:
+        with suppress(TelegramForbiddenError):
             await bot.send_message(chat_id=admin, text=message_text)
     await bot.session.close() 
 
 async def send_base_participants_reminder(event_id):
-    bot = Bot(token=TOKEN)
-    bot.default.parse_mode = 'HTML'
+    bot = Bot(token=TOKEN, parse_mode='HTML')
     event = await get_event_by_id(event_id)
     participants = await get_participants(event_id)
     admins = await get_admins()
@@ -290,16 +285,16 @@ async def send_base_participants_reminder(event_id):
     success = 0
     formatted_date = event.date.strftime(f'%d.%m.%Y в %H:%M')
     default_newsletter = ('Здравствуйте❗ Увлекательное путешествие в мир знаний уже на пороге❗ Скоро стартует '
-        f'</b>{event.title}</b>, который расширит ваши горизонты и предоставит ценные инсайты👌. '
+        f'<b>{event.title}</b>, который расширит ваши горизонты и предоставит ценные инсайты👌. '
         f'Мы будем рады видеть вас <b>{formatted_date}</b>')
     for participant in participants:
         try:
             await bot.send_message(chat_id=participant.tg_id, text=default_newsletter)
             success += 1
-        except TelegramBadRequest:
+        except TelegramForbiddenError:
             fail += 1
-    with suppress(TelegramBadRequest):
-        for admin in admins[1:]:
+    with suppress(TelegramForbiddenError):
+        for admin in admins:
             await bot.send_message(chat_id=admin, 
                 text= f'🎉 Рассылка напоминания участникам о {event.title} успешно завершена!\n '
                 f'✅ Доставлено пользователям: <b>{success}</b>\n⛔️ Не доставлено, отключили бота: <b>{fail}</b>')
@@ -322,8 +317,7 @@ async def schedule_base_event_reminders(event_id):
                                 id=f'cron_event_{event_id}', replace_existing=True)
     
 async def send_custom_participants_reminder(event_id, reminder_num):
-    bot = Bot(token=TOKEN)
-    bot.default.parse_mode = 'HTML'
+    bot = Bot(token=TOKEN, parse_mode='HTML')
     event = await get_event_by_id(event_id)
     participants = await get_participants(event_id)
     admins = await get_admins()
@@ -334,10 +328,10 @@ async def send_custom_participants_reminder(event_id, reminder_num):
         try:
             await bot.send_message(chat_id=participant.tg_id, text=message)
             success += 1
-        except TelegramBadRequest:
+        except TelegramForbiddenError:
             fail += 1
-    with suppress(TelegramBadRequest):
-        for admin in admins[1:]:
+    with suppress(TelegramForbiddenError):
+        for admin in admins:
             await bot.send_message(chat_id=admin, 
                 text= f'🎉 Рассылка напоминания участникам о {event.title} успешно завершена!\n '
                 f'✅ Доставлено пользователям: <b>{success}</b>\n⛔️ Не доставлено, отключили бота: <b>{fail}</b>')
