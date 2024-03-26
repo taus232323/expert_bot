@@ -65,6 +65,11 @@ async def get_max_user_id() -> int:
     async with async_session() as session:
         max_id = await session.scalar(select(func.max(Users.id)))
     return int(max_id - 1)
+
+async def get_max_event_id() -> int:
+    async with async_session() as session:
+        max_id = await session.scalar(select(func.max(Events.id)))
+    return int(max_id)
     
 async def get_user_by_id(user_id: int):
     async with async_session() as session:
@@ -185,17 +190,17 @@ async def delete_event(event_id: int):
 
 async def edit_event(data):
     async with async_session() as session:
-        await session.execute(
-            update(Events).where(Events.id == data["_id"]).values({
-                Events.title: data['title'],
-                Events.description: data['description'],
-                Events.date: data['date']}))
-        await session.commit()
-
-async def get_max_event_id() -> int:
-    async with async_session() as session:
-        max_id = await session.scalar(select(func.max(Events.id)))
-    return int(max_id)
+        event_update_data = {}
+        if 'title' in data:
+            event_update_data[Events.title] = data['title']
+        if 'description' in data:
+            event_update_data[Events.description] = data['description']
+        if 'date' in data:
+            event_update_data[Events.date] = data['date']
+        if event_update_data:
+            await session.execute(
+                update(Events).where(Events.id == data["event"]).values(event_update_data))
+            await session.commit()
 
 async def set_participant(tg_id, event_id):
     async with async_session() as session:

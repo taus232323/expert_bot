@@ -30,11 +30,3 @@ super_admin_main = ReplyKeyboardMarkup(
     input_field_placeholder='Выберите действие',
     one_time_keyboard=True)
 
-leave_default = ReplyKeyboardMarkup(
-    keyboard=[
-        [KeyboardButton(text='♻️ Cтандартные уведомления')],
-        [KeyboardButton(text='⚙ Настроить уведомления')]],
-    resize_keyboard=True,
-    input_field_placeholder='Выберите один из вариантов',
-    one_time_keyboard=True
-    )
