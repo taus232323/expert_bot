@@ -11,6 +11,7 @@ from keyboards import reply, inline, builders
 from data.requests import (get_user_by_id, set_participant, set_response, get_service_by_id, get_admins,
     delete_user_briefing, get_user_briefing, get_question_by_id, get_user_by_tg, get_event_by_id, get_paid_days,
     get_last_question_number)
+from settings import EXPERT
 
 class BriefingStates(StatesGroup):
     question = State()
@@ -180,3 +181,11 @@ async def send_report(message: Message, state: FSMContext):
                     chat_id=admin, text=f"<b>✅✅✅Заполненный брифинг от✅✅✅</b>\n@{username}:\n\n{report[0]}")
         except TelegramForbiddenError:
             print(f'Не удалось отправить сообщение админу {admin}')
+            
+@router.message(F.text.lower() == "⚠ о боте")
+async def about_bot(message: Message, bot: Bot):
+    bot_me = await bot.get_me()
+    await message.answer(
+        f'{bot_me} - это Бот-сервис, разработанный компаний ООО "Про Бизнес Уникальность" по запросу '
+        f'{EXPERT} на основании лицензионного соглашения-оферты опубликованного на сайте tmeet.ru',
+        reply_markup=inline.about_bot)

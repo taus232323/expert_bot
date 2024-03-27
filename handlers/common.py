@@ -96,13 +96,16 @@ async def contact_selected(message: Message):
     ADMIN_USER_IDS = await get_admins()
     contacts = await get_contacts()   
     contact_info = "\n".join([f"{contact.contact_type}: {contact.value}" for contact in contacts])
+    welcome = await get_welcome()
     if len(contact_info) < 2:
         if message.from_user.id in ADMIN_USER_IDS:
             await message.answer("❌Вы ещё не добавили ни одного контакта", reply_markup=inline.new_contact)
         else:
-            await message.answer("❌Контактная информация отсутствует")
+            await message.answer("❌Контактная информация отсутствует", inline.to_main)
     else:
-        await message.answer(f"<b>📖Моя контактная информация и график работы:</b>\n{contact_info}")
+        if welcome:
+            await message.answer_photo(welcome.picture, welcome.about)
+        await message.answer(f"<b>📖Моя контактная информация:</b>\n{contact_info}", inline.to_main)
         if message.from_user.id in SUPER_ADMIN_USER_IDS:
             await message.answer("Выберите желаемую опцию:👇", reply_markup=inline.contacts)
    

@@ -33,7 +33,7 @@ new_case = InlineKeyboardMarkup(inline_keyboard=[
             InlineKeyboardButton(text='⛔ Отмена', callback_data='cancel_action')]])
 
 user_got_case = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='❓ Пройти брифинг', callback_data='show_instruction')],
+    [InlineKeyboardButton(text='❓ Заполнить бриф', callback_data='show_instruction')],
     [InlineKeyboardButton(text='⛔ Отмена', callback_data='cancel_action')]])
 
 new_service = InlineKeyboardMarkup(inline_keyboard=[
@@ -96,6 +96,9 @@ end_briefing_selected = InlineKeyboardMarkup(inline_keyboard=[
 briefing_finished = InlineKeyboardMarkup(inline_keyboard=[
      [InlineKeyboardButton(text='🔄 Сначала', callback_data='restart_briefing'),
     InlineKeyboardButton(text='🔙 Меню', callback_data='to_main')]])
+
+to_main = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='🔙 На главную', callback_data='to_main')]])
     
 cancel_action = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='⛔ Отмена', callback_data='cancel_action')]])
@@ -106,10 +109,11 @@ admin_support = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='🎁 Запросить промо', callback_data='ask_promo'),
         InlineKeyboardButton(text='💳 Оплатить подписку', callback_data='pay_subscription')]])
 
-answer_idea = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='📝 Ответить', callback_data='answer_idea'),
-     InlineKeyboardButton(text='🆘 Я занят', callback_data='i_am_busy')]])
-    
+about_bot = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='📃 Лицензионное соглашение', url='https://tmeet.ru/license_agreement_bot/')],
+    [InlineKeyboardButton(text='📃 Обработка персональных данных', url='https://tmeet.ru/personal_data_bot/')],
+    [InlineKeyboardButton(text='🔥 Заказать такого бота себе', url='https://tmeet.ru/personal_data_bot/')]])
+
 async def go_to_support(client_link):
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='⚡ Перейти', url=f'https://t.me/MstBiBot?start={client_link}')],
@@ -133,7 +137,7 @@ async def service_chosen(service_id):
 async def order_service(service_id):
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='🤝 Заказать услугу', callback_data=f'order_service_{service_id}')],
-    [InlineKeyboardButton(text='❓ Пройти брифинг', callback_data='show_instruction')],
+    [InlineKeyboardButton(text='❓ Заполнить бриф', callback_data='show_instruction')],
     [InlineKeyboardButton(text='⛔Отмена', callback_data='cancel_action')]])
     return keyboard
 

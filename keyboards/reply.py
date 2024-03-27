@@ -5,7 +5,7 @@ user_main = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text='📖 Контакты'), KeyboardButton(text='💎 Кейсы и отзывы')],
         [KeyboardButton(text='📆 Мероприятия'), KeyboardButton(text='🟢 Услуги и товары')],
-        [KeyboardButton(text='❓ Брифинг')]],
+        [KeyboardButton(text='❓ Заполнить бриф'), KeyboardButton(text='⚠ О боте')]],
     resize_keyboard=True,
     input_field_placeholder='Выберите действие',
     one_time_keyboard=True)
